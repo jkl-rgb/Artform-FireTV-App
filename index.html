@@ -1,572 +1,452 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Fire TV Digital Signage</title>
-  <style>
-    * {
-      margin: 0;
-      padding: 0;
-      box-sizing: border-box;
-    }
-
-    html, body {
-      width: 100vw;
-      height: 100vh;
-      overflow: hidden;
-      background: #000;
-      font-family: Arial, sans-serif;
-    }
-
-    #player-container {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      background: #000;
-      z-index: 1;
-    }
-
-    #content-display {
-      width: 100%;
-      height: 100%;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-    }
-
-    #content-display img,
-    #content-display video,
-    #content-display iframe {
-      width: 100%;
-      height: 100%;
-      object-fit: contain;
-      border: none;
-    }
-
-    #message-display {
-      width: 100%;
-      height: 100%;
-      display: grid;
-      position: relative;
-    }
-
-    .message-zone {
-      display: flex;
-      align-items: flex-start;
-      justify-content: flex-start;
-      overflow: hidden;
-      word-wrap: break-word;
-      white-space: pre-wrap;
-    }
-
-    #loading-screen,
-    #error-screen {
-      position: fixed;
-      top: 0;
-      left: 0;
-      width: 100vw;
-      height: 100vh;
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      justify-content: center;
-      color: white;
-      background: #000;
-      z-index: 10;
-    }
-
-    .spinner {
-      width: 60px;
-      height: 60px;
-      border: 4px solid #333;
-      border-top-color: #fff;
-      border-radius: 50%;
-      animation: spin 1s linear infinite;
-      margin-bottom: 20px;
-    }
-
-    @keyframes spin {
-      to { transform: rotate(360deg); }
-    }
-
-    #debug-overlay {
-      position: fixed;
-      bottom: 10px;
-      left: 10px;
-      background: rgba(0,0,0,0.8);
-      color: #0f0;
-      padding: 10px 15px;
-      border-radius: 8px;
-      font-family: monospace;
-      font-size: 11px;
-      z-index: 100;
-      max-width: 400px;
-    }
-
-    .hidden {
-      display: none !important;
-    }
-
-    #datetime-widget {
-      position: absolute;
-      bottom: 30px;
-      right: 30px;
-      background: #000;
-      color: white;
-      padding: 15px 20px;
-      border-radius: 10px;
-      text-align: center;
-      font-weight: 300;
-    }
-
-    .datetime-date {
-      font-size: 0.9em;
-      margin-bottom: 5px;
-    }
-
-    .datetime-time {
-      font-size: 1.3em;
-      font-weight: 400;
-    }
-  </style>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Fire TV Signage Player</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+        
+        body, html {
+            width: 100vw;
+            height: 100vh;
+            overflow: hidden;
+            background: #000;
+            font-family: Arial, sans-serif;
+        }
+        
+        .player-container {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100vw;
+            height: 100vh;
+            background: #000;
+            z-index: 999999;
+        }
+        
+        .loading-screen, .error-screen {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: #fff;
+            text-align: center;
+            padding: 40px;
+        }
+        
+        .loading-icon {
+            font-size: 48px;
+            margin-bottom: 20px;
+            animation: spin 2s linear infinite;
+        }
+        
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+        
+        .error-icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+        
+        .content-frame {
+            width: 100%;
+            height: 100%;
+        }
+        
+        .content-frame iframe,
+        .content-frame img,
+        .content-frame video {
+            width: 100%;
+            height: 100%;
+            border: none;
+            object-fit: contain;
+        }
+        
+        .debug-overlay {
+            position: absolute;
+            bottom: 10px;
+            left: 10px;
+            background: rgba(0, 0, 0, 0.8);
+            color: #fff;
+            padding: 8px 12px;
+            border-radius: 6px;
+            font-size: 11px;
+            font-family: monospace;
+            max-width: 400px;
+            z-index: 1000000;
+        }
+        
+        .debug-title {
+            font-size: 12px;
+            font-weight: bold;
+            margin-bottom: 4px;
+        }
+        
+        .debug-info {
+            font-size: 9px;
+            color: #888;
+        }
+        
+        .message-container {
+            width: 100%;
+            height: 100%;
+            display: grid;
+            position: relative;
+        }
+        
+        .message-zone {
+            display: flex;
+            overflow: hidden;
+            word-wrap: break-word;
+            white-space: pre-wrap;
+        }
+        
+        .datetime-widget {
+            position: absolute;
+            background: #000;
+            color: white;
+            border-radius: 8px;
+            font-weight: 300;
+            text-align: center;
+        }
+    </style>
 </head>
 <body>
-  
-  <!-- Loading Screen -->
-  <div id="loading-screen">
-    <div class="spinner"></div>
-    <div style="font-size: 24px;">Loading Fire TV Signage...</div>
-    <div id="loading-status" style="font-size: 14px; color: #888; margin-top: 10px;"></div>
-  </div>
-
-  <!-- Error Screen -->
-  <div id="error-screen" class="hidden">
-    <div style="font-size: 64px; margin-bottom: 20px;">⚠️</div>
-    <div style="font-size: 28px; margin-bottom: 15px;">Connection Error</div>
-    <div id="error-message" style="font-size: 16px; color: #aaa; max-width: 600px; text-align: center;"></div>
-    <div style="font-size: 12px; color: #666; margin-top: 20px;">Retrying in <span id="retry-countdown">30</span>s...</div>
-  </div>
-
-  <!-- Player Container -->
-  <div id="player-container" class="hidden">
-    <div id="content-display"></div>
-  </div>
-
-  <!-- Debug Overlay (optional, can be hidden) -->
-  <div id="debug-overlay">
-    <div id="debug-info">Initializing...</div>
-  </div>
-
-  <script>
-    // ==========================================
-    // CONFIGURATION
-    // ==========================================
-    const CONFIG = {
-      BACKEND_URL: 'https://artform-signage-app.onrender.com',
-      DEVICE_ID: 'firetv_001', // Change this for each device
-      POLL_INTERVAL: 5 * 60 * 1000, // 5 minutes
-      SCREEN_WIDTH_INCHES: 52.3,
-      SCREEN_HEIGHT_INCHES: 29.4,
-      DEBUG: true, // Set to false to hide debug overlay
-    };
-
-    // ==========================================
-    // STATE
-    // ==========================================
-    let state = {
-      status: 'initializing',
-      playlist: null,
-      currentIndex: 0,
-      currentContent: null,
-      contentTimer: null,
-      pollTimer: null,
-      retryTimer: null,
-      retryCount: 0,
-    };
-
-    // ==========================================
-    // DOM ELEMENTS
-    // ==========================================
-    const elements = {
-      loading: document.getElementById('loading-screen'),
-      loadingStatus: document.getElementById('loading-status'),
-      error: document.getElementById('error-screen'),
-      errorMessage: document.getElementById('error-message'),
-      retryCountdown: document.getElementById('retry-countdown'),
-      player: document.getElementById('player-container'),
-      content: document.getElementById('content-display'),
-      debug: document.getElementById('debug-overlay'),
-      debugInfo: document.getElementById('debug-info'),
-    };
-
-    // ==========================================
-    // UTILITY FUNCTIONS
-    // ==========================================
-    function log(message) {
-      const timestamp = new Date().toLocaleTimeString();
-      console.log(`[${timestamp}] ${message}`);
-      if (CONFIG.DEBUG) {
-        elements.debugInfo.textContent = `${timestamp}: ${message}`;
-      }
-    }
-
-    function showLoading(message) {
-      elements.loadingStatus.textContent = message;
-      elements.loading.classList.remove('hidden');
-      elements.error.classList.add('hidden');
-      elements.player.classList.add('hidden');
-    }
-
-    function showError(message) {
-      elements.errorMessage.textContent = message;
-      elements.loading.classList.add('hidden');
-      elements.error.classList.remove('hidden');
-      elements.player.classList.add('hidden');
-      startRetryCountdown();
-    }
-
-    function showPlayer() {
-      elements.loading.classList.add('hidden');
-      elements.error.classList.add('hidden');
-      elements.player.classList.remove('hidden');
-    }
-
-    function startRetryCountdown() {
-      let countdown = 30;
-      elements.retryCountdown.textContent = countdown;
-      
-      if (state.retryTimer) clearInterval(state.retryTimer);
-      
-      state.retryTimer = setInterval(() => {
-        countdown--;
-        elements.retryCountdown.textContent = countdown;
-        if (countdown <= 0) {
-          clearInterval(state.retryTimer);
-          fetchSchedule();
-        }
-      }, 1000);
-    }
-
-    function inchesToPx(inches) {
-      const screenWidthPx = window.innerWidth;
-      const scale = screenWidthPx / CONFIG.SCREEN_WIDTH_INCHES;
-      return inches * scale;
-    }
-
-    // ==========================================
-    // CONTENT RENDERING
-    // ==========================================
-    function renderContent(content) {
-      if (!content) {
-        log('ERROR: No content to render');
-        return;
-      }
-
-      elements.content.innerHTML = '';
-      log(`Rendering: ${content.title} (${content.type})`);
-
-      switch (content.type) {
-        case 'image':
-          renderImage(content);
-          break;
-        case 'video':
-          renderVideo(content);
-          break;
-        case 'youtube':
-          renderYouTube(content);
-          break;
-        case 'url':
-          renderURL(content);
-          break;
-        case 'message':
-          renderMessage(content);
-          break;
-        default:
-          renderUnsupported(content);
-      }
-    }
-
-    function renderImage(content) {
-      const img = document.createElement('img');
-      img.src = content.url;
-      img.alt = content.title;
-      elements.content.appendChild(img);
-    }
-
-    function renderVideo(content) {
-      const video = document.createElement('video');
-      video.src = content.url;
-      video.autoplay = true;
-      video.muted = true;
-      video.loop = false;
-      elements.content.appendChild(video);
-    }
-
-    function renderYouTube(content) {
-      const videoId = content.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/)?.[1];
-      if (!videoId) {
-        log('ERROR: Invalid YouTube URL');
-        return;
-      }
-      const iframe = document.createElement('iframe');
-      iframe.src = `https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1&playlist=${videoId}`;
-      iframe.allow = 'autoplay';
-      elements.content.appendChild(iframe);
-    }
-
-    function renderURL(content) {
-      const iframe = document.createElement('iframe');
-      iframe.src = content.url;
-      elements.content.appendChild(iframe);
-    }
-
-    function renderMessage(content) {
-      const message = content.message || {};
-      const layout = message.layout || 'full';
-      const zones = message.zones || [];
-      const background = message.background || '#ffffff';
-      
-      const container = document.createElement('div');
-      container.id = 'message-display';
-      container.style.backgroundColor = background;
-      container.style.gridTemplate = getGridTemplate(layout);
-      
-      zones.forEach(zone => {
-        const zoneEl = document.createElement('div');
-        zoneEl.className = 'message-zone';
-        zoneEl.style.gridArea = getZoneGridArea(layout, zone.id);
-        zoneEl.style.backgroundColor = zone.backgroundColor || 'transparent';
-        zoneEl.style.color = zone.textColor || '#000000';
-        zoneEl.style.fontSize = `${inchesToPx(parseFloat(zone.fontSizeInches) || 0.5)}px`;
-        zoneEl.style.fontWeight = zone.fontWeight || '400';
-        zoneEl.style.textAlign = zone.textAlign || 'left';
-        zoneEl.style.padding = `${inchesToPx(parseFloat(zone.paddingInches) || 0.5)}px`;
-        zoneEl.style.lineHeight = '1.2';
+    <div id="app" class="player-container"></div>
+    
+    <script>
+        // Configuration
+        const BACKEND_URL = "https://artform-signage-app.onrender.com";
+        const DEVICE_ID = "firetv_001";
+        const SCREEN_WIDTH_INCHES = 52.3;  // 60" diagonal 16:9
+        const SCREEN_HEIGHT_INCHES = 29.4;
         
-        if (zone.type === 'datetime') {
-          zoneEl.id = 'datetime-zone';
-          updateDateTime(zoneEl, zone);
-          setInterval(() => updateDateTime(zoneEl, zone), 1000);
-        } else {
-          zoneEl.textContent = zone.text || '';
+        // Global state
+        let state = {
+            status: 'initializing',
+            error: null,
+            playlist: null,
+            currentIndex: 0,
+            content: null,
+            previewScale: 1,
+            debugLog: []
+        };
+        
+        // Utility functions
+        function log(msg) {
+            const timestamp = new Date().toLocaleTimeString();
+            console.log(`[${timestamp}] ${msg}`);
+            state.debugLog.push(`[${timestamp}] ${msg}`);
+            if (state.debugLog.length > 30) state.debugLog.shift();
         }
         
-        container.appendChild(zoneEl);
-      });
-      
-      if (message.showDateTime) {
-        const widget = createDateTimeWidget();
-        container.appendChild(widget);
-      }
-      
-      elements.content.appendChild(container);
-    }
-
-    function createDateTimeWidget() {
-      const widget = document.createElement('div');
-      widget.id = 'datetime-widget';
-      updateWidget(widget);
-      setInterval(() => updateWidget(widget), 1000);
-      return widget;
-    }
-
-    function updateWidget(widget) {
-      const now = new Date();
-      widget.innerHTML = `
-        <div class="datetime-date">${now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' })}</div>
-        <div class="datetime-time">${now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' })}</div>
-      `;
-    }
-
-    function updateDateTime(element, zone) {
-      const now = new Date();
-      const dateFormat = zone.dateFormat || 'short';
-      const timeFormat = zone.timeFormat || '12h';
-      
-      let text = '';
-      if (dateFormat !== 'none') {
-        text += now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-      }
-      if (timeFormat !== 'none') {
-        if (text) text += '\n';
-        text += now.toLocaleTimeString('en-US', { 
-          hour: '2-digit', 
-          minute: '2-digit',
-          hour12: timeFormat === '12h'
-        });
-      }
-      element.textContent = text;
-    }
-
-    function renderUnsupported(content) {
-      const msg = document.createElement('div');
-      msg.style.cssText = 'color: white; font-size: 24px; text-align: center;';
-      msg.textContent = `Unsupported content type: ${content.type}`;
-      elements.content.appendChild(msg);
-    }
-
-    function getGridTemplate(layout) {
-      const templates = {
-        'full': '1fr / 1fr',
-        'split-vertical': '1fr / 1fr 1fr',
-        'split-horizontal': '1fr 1fr / 1fr',
-        'three-column': '1fr / 1fr 1fr 1fr',
-        'three-row': '1fr 1fr 1fr / 1fr',
-        'grid-2x2': '1fr 1fr / 1fr 1fr',
-        'grid-3x3': '1fr 1fr 1fr / 1fr 1fr 1fr',
-        'grid-4x4': '1fr 1fr 1fr 1fr / 1fr 1fr 1fr 1fr',
-      };
-      return templates[layout] || '1fr / 1fr';
-    }
-
-    function getZoneGridArea(layout, zoneId) {
-      const layouts = {
-        'full': { main: '1/1/2/2' },
-        'split-vertical': { left: '1/1/2/2', right: '1/2/2/3' },
-        'split-horizontal': { top: '1/1/2/2', bottom: '2/1/3/2' },
-        'three-column': { left: '1/1/2/2', center: '1/2/2/3', right: '1/3/2/4' },
-        'three-row': { top: '1/1/2/2', middle: '2/1/3/2', bottom: '3/1/4/2' },
-        'grid-2x2': {
-          'top-left': '1/1/2/2', 'top-right': '1/2/2/3',
-          'bottom-left': '2/1/3/2', 'bottom-right': '2/2/3/3'
-        },
-      };
-      return layouts[layout]?.[zoneId] || '1/1/2/2';
-    }
-
-    // ==========================================
-    // CONTENT ROTATION
-    // ==========================================
-    function startContentRotation() {
-      if (!state.currentContent || !state.playlist) return;
-      
-      const duration = (state.currentContent.duration || state.playlist.defaultDuration || 15) * 1000;
-      log(`Showing for ${duration/1000}s, then rotating`);
-      
-      if (state.contentTimer) clearTimeout(state.contentTimer);
-      
-      state.contentTimer = setTimeout(() => {
-        rotateToNextContent();
-      }, duration);
-    }
-
-    function rotateToNextContent() {
-      if (!state.playlist || !state.playlist.items || state.playlist.items.length === 0) return;
-      
-      state.currentIndex = (state.currentIndex + 1) % state.playlist.items.length;
-      state.currentContent = state.playlist.items[state.currentIndex];
-      
-      log(`Rotating to item ${state.currentIndex + 1}/${state.playlist.items.length}`);
-      renderContent(state.currentContent);
-      startContentRotation();
-    }
-
-    // ==========================================
-    // API CALLS
-    // ==========================================
-    async function fetchSchedule() {
-      try {
-        log(`Fetching schedule for device: ${CONFIG.DEVICE_ID}`);
-        showLoading('Connecting to backend...');
-        
-        const response = await fetch(`${CONFIG.BACKEND_URL}/v1/device/schedule?device_id=${CONFIG.DEVICE_ID}`);
-        const data = await response.json();
-        
-        if (!data.ok || !data.schedules || data.schedules.length === 0) {
-          throw new Error('No active schedule found for this device');
+        function calculateScale() {
+            const viewportWidth = window.innerWidth;
+            state.previewScale = viewportWidth / SCREEN_WIDTH_INCHES;
         }
         
-        const schedule = data.schedules[0];
-        log(`Active schedule: ${schedule.name || 'unnamed'}`);
-        
-        if (!schedule.mediaId) {
-          throw new Error('Schedule has no playlist assigned');
+        function inchesToPx(inches) {
+            return inches * state.previewScale;
         }
         
-        await fetchPlaylist(schedule.mediaId);
-        
-      } catch (error) {
-        log(`ERROR: ${error.message}`);
-        showError(error.message);
-      }
-    }
-
-    async function fetchPlaylist(playlistId) {
-      try {
-        showLoading('Loading playlist...');
-        log(`Fetching playlist: ${playlistId}`);
-        
-        const response = await fetch(`${CONFIG.BACKEND_URL}/v1/media/${playlistId}`);
-        const data = await response.json();
-        
-        if (!data.ok || !data.playlist) {
-          throw new Error('Failed to load playlist');
+        function getGridTemplate(layout) {
+            const templates = {
+                "full": "1fr / 1fr",
+                "split-vertical": "1fr / 1fr 1fr",
+                "split-horizontal": "1fr 1fr / 1fr",
+                "three-column": "1fr / 1fr 1fr 1fr",
+                "three-row": "1fr 1fr 1fr / 1fr",
+                "grid-2x2": "1fr 1fr / 1fr 1fr",
+                "grid-3x3": "1fr 1fr 1fr / 1fr 1fr 1fr",
+                "grid-4x4": "1fr 1fr 1fr 1fr / 1fr 1fr 1fr 1fr"
+            };
+            return templates[layout] || "1fr / 1fr";
         }
         
-        const playlist = data.playlist;
-        
-        if (!playlist.items || playlist.items.length === 0) {
-          throw new Error('Playlist is empty');
+        function getZoneGridArea(layout, zoneId) {
+            const layouts = {
+                "full": { main: "1/1/2/2" },
+                "split-vertical": { left: "1/1/2/2", right: "1/2/2/3" },
+                "split-horizontal": { top: "1/1/2/2", bottom: "2/1/3/2" },
+                "three-column": { left: "1/1/2/2", center: "1/2/2/3", right: "1/3/2/4" },
+                "three-row": { top: "1/1/2/2", middle: "2/1/3/2", bottom: "3/1/4/2" },
+                "grid-2x2": {
+                    "top-left": "1/1/2/2",
+                    "top-right": "1/2/2/3",
+                    "bottom-left": "2/1/3/2",
+                    "bottom-right": "2/2/3/3"
+                },
+                "grid-3x3": {
+                    "row1-col1": "1/1/2/2", "row1-col2": "1/2/2/3", "row1-col3": "1/3/2/4",
+                    "row2-col1": "2/1/3/2", "row2-col2": "2/2/3/3", "row2-col3": "2/3/3/4",
+                    "row3-col1": "3/1/4/2", "row3-col2": "3/2/4/3", "row3-col3": "3/3/4/4"
+                },
+                "grid-4x4": {
+                    r1c1: "1/1/2/2", r1c2: "1/2/2/3", r1c3: "1/3/2/4", r1c4: "1/4/2/5",
+                    r2c1: "2/1/3/2", r2c2: "2/2/3/3", r2c3: "2/3/3/4", r2c4: "2/4/3/5",
+                    r3c1: "3/1/4/2", r3c2: "3/2/4/3", r3c3: "3/3/4/4", r3c4: "3/4/4/5",
+                    r4c1: "4/1/5/2", r4c2: "4/2/5/3", r4c3: "4/3/5/4", r4c4: "4/4/5/5"
+                }
+            };
+            return layouts[layout]?.[zoneId] || "1/1/2/2";
         }
         
-        log(`Loaded playlist: ${playlist.name} (${playlist.items.length} items)`);
-        
-        state.playlist = playlist;
-        state.currentIndex = 0;
-        state.currentContent = playlist.items[0];
-        state.status = 'playing';
-        
-        showPlayer();
-        renderContent(state.currentContent);
-        startContentRotation();
-        
-      } catch (error) {
-        log(`ERROR: ${error.message}`);
-        showError(error.message);
-      }
-    }
-
-    // ==========================================
-    // INITIALIZATION
-    // ==========================================
-    function init() {
-      log('Fire TV Player initializing...');
-      
-      // Hide debug overlay if not in debug mode
-      if (!CONFIG.DEBUG) {
-        elements.debug.classList.add('hidden');
-      }
-      
-      // Prevent screen sleep
-      if ('wakeLock' in navigator) {
-        navigator.wakeLock.request('screen').catch(err => {
-          log(`Wake Lock error: ${err.message}`);
-        });
-      }
-      
-      // Initial fetch
-      fetchSchedule();
-      
-      // Set up polling
-      state.pollTimer = setInterval(() => {
-        log('Polling for schedule updates...');
-        fetchSchedule();
-      }, CONFIG.POLL_INTERVAL);
-      
-      // Listen for visibility changes to resume playback
-      document.addEventListener('visibilitychange', () => {
-        if (!document.hidden && state.status === 'playing') {
-          log('Page visible again, resuming...');
-          renderContent(state.currentContent);
+        // Rendering functions
+        function renderLoading() {
+            return `
+                <div class="loading-screen">
+                    <div class="loading-icon">🔄</div>
+                    <div style="font-size: 24px; margin-bottom: 10px;">Loading Fire TV Signage...</div>
+                    <div style="font-size: 14px; color: #888;">Device: ${DEVICE_ID}</div>
+                </div>
+            `;
         }
-      });
-    }
-
-    // Start the app
-    window.addEventListener('load', init);
-  </script>
+        
+        function renderError() {
+            return `
+                <div class="error-screen">
+                    <div class="error-icon">⚠️</div>
+                    <div style="font-size: 28px; margin-bottom: 15px;">Backend Error</div>
+                    <div style="font-size: 16px; color: #aaa; max-width: 800px; line-height: 1.6; margin-bottom: 20px;">
+                        ${state.error || 'Unable to load content'}
+                    </div>
+                    <div style="font-size: 12px; color: #666; margin-top: 20px;">
+                        Device ID: ${DEVICE_ID} | Backend: ${BACKEND_URL}
+                    </div>
+                </div>
+            `;
+        }
+        
+        function renderMessage(content) {
+            const message = content.message || {};
+            const layout = message.layout || "full";
+            const zones = message.zones || [];
+            const background = message.background || "#ffffff";
+            const showDateTime = message.showDateTime || false;
+            
+            let zonesHtml = zones.map(zone => {
+                const fontSize = parseFloat(zone.fontSizeInches) || 0.5;
+                const padding = parseFloat(zone.paddingInches) || 0.5;
+                const textAlign = zone.textAlign || 'left';
+                const justifyContent = textAlign === 'left' ? 'flex-start' : textAlign === 'right' ? 'flex-end' : 'center';
+                
+                return `
+                    <div class="message-zone" style="
+                        grid-area: ${getZoneGridArea(layout, zone.id)};
+                        background-color: ${zone.backgroundColor || 'transparent'};
+                        color: ${zone.textColor || '#000000'};
+                        font-size: ${inchesToPx(fontSize)}px;
+                        font-weight: ${zone.fontWeight || '400'};
+                        text-align: ${textAlign};
+                        padding: ${inchesToPx(padding)}px;
+                        line-height: 1.2;
+                        align-items: flex-start;
+                        justify-content: ${justifyContent};
+                    ">
+                        ${zone.text || ''}
+                    </div>
+                `;
+            }).join('');
+            
+            let dateTimeHtml = '';
+            if (showDateTime) {
+                const now = new Date();
+                const dateStr = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
+                const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
+                
+                dateTimeHtml = `
+                    <div class="datetime-widget" style="
+                        bottom: ${inchesToPx(1)}px;
+                        right: ${inchesToPx(1)}px;
+                        width: ${inchesToPx(5)}px;
+                        padding: ${inchesToPx(0.4)}px ${inchesToPx(0.6)}px;
+                    ">
+                        <div style="font-size: ${inchesToPx(0.35)}px; line-height: 1.3;">${dateStr}</div>
+                        <div style="font-size: ${inchesToPx(0.45)}px; font-weight: 400; margin-top: ${inchesToPx(0.05)}px; line-height: 1.3;">${timeStr}</div>
+                    </div>
+                `;
+            }
+            
+            return `
+                <div class="message-container" style="
+                    background-color: ${layout === 'full' ? background : '#ffffff'};
+                    grid-template: ${getGridTemplate(layout)};
+                ">
+                    ${zonesHtml}
+                    ${dateTimeHtml}
+                </div>
+            `;
+        }
+        
+        function renderContent(content) {
+            if (!content) return '';
+            
+            switch (content.type) {
+                case 'image':
+                    return `<div class="content-frame"><img src="${content.url}" alt="${content.title}"></div>`;
+                
+                case 'video':
+                    return `<div class="content-frame"><video src="${content.url}" autoplay muted loop></video></div>`;
+                
+                case 'youtube':
+                    const videoId = content.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/)?.[1];
+                    return `<div class="content-frame"><iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1" allow="autoplay"></iframe></div>`;
+                
+                case 'url':
+                    return `<div class="content-frame"><iframe src="${content.url}"></iframe></div>`;
+                
+                case 'message':
+                    return renderMessage(content);
+                
+                default:
+                    return `<div class="error-screen"><div style="font-size: 24px;">Unsupported content type: ${content.type}</div></div>`;
+            }
+        }
+        
+        function renderDebug() {
+            if (!state.content) return '';
+            
+            return `
+                <div class="debug-overlay">
+                    <div class="debug-title">
+                        ${state.content.title || 'Playing'} | ${state.currentIndex + 1}/${state.playlist?.items?.length || 0}
+                    </div>
+                    <div class="debug-info">
+                        Type: ${state.content.type || 'undefined'} | Duration: ${state.content.duration || state.playlist?.default_duration || 'N/A'}s
+                    </div>
+                </div>
+            `;
+        }
+        
+        function render() {
+            const app = document.getElementById('app');
+            
+            let html = '';
+            if (state.status === 'initializing' || state.status === 'loading') {
+                html = renderLoading();
+            } else if (state.status === 'error') {
+                html = renderError();
+            } else if (state.status === 'playing' && state.content) {
+                html = renderContent(state.content) + renderDebug();
+            }
+            
+            app.innerHTML = html;
+            
+            // Update date/time every second for message displays
+            if (state.status === 'playing' && state.content?.type === 'message' && state.content?.message?.showDateTime) {
+                setTimeout(() => {
+                    if (state.status === 'playing' && state.content?.type === 'message') {
+                        render();
+                    }
+                }, 1000);
+            }
+        }
+        
+        // Content rotation
+        function scheduleNextContent() {
+            if (!state.playlist || !state.content) return;
+            
+            const duration = (state.content.duration || state.playlist.default_duration || 15) * 1000;
+            log(`Showing "${state.content.title}" for ${duration/1000}s`);
+            
+            setTimeout(() => {
+                if (state.playlist.items && state.playlist.items.length > 1) {
+                    state.currentIndex = (state.currentIndex + 1) % state.playlist.items.length;
+                    state.content = state.playlist.items[state.currentIndex];
+                    log(`Switching to item ${state.currentIndex + 1}/${state.playlist.items.length}`);
+                    render();
+                    scheduleNextContent();
+                } else {
+                    scheduleNextContent();
+                }
+            }, duration);
+        }
+        
+        // Fetch content from backend
+        async function fetchSchedule() {
+            try {
+                log(`Fetching schedule for device: ${DEVICE_ID}`);
+                const response = await fetch(`${BACKEND_URL}/v1/device/schedule?device_id=${DEVICE_ID}`);
+                const data = await response.json();
+                
+                if (!data.ok || !data.schedules || data.schedules.length === 0) {
+                    throw new Error("No active schedule found for this device");
+                }
+                
+                const schedule = data.schedules[0];
+                log(`Active schedule: ${schedule.name || 'unnamed'}`);
+                
+                if (!schedule.mediaId) {
+                    throw new Error("Schedule has no playlist assigned");
+                }
+                
+                log(`Fetching playlist: ${schedule.mediaId}`);
+                const playlistRes = await fetch(`${BACKEND_URL}/v1/media/${schedule.mediaId}`);
+                const playlistData = await playlistRes.json();
+                
+                if (!playlistData.ok || !playlistData.playlist) {
+                    throw new Error("Failed to load playlist");
+                }
+                
+                const playlist = playlistData.playlist;
+                log(`Loaded playlist: ${playlist.name} (${playlist.items?.length || 0} items)`);
+                
+                if (!playlist.items || playlist.items.length === 0) {
+                    throw new Error("Playlist is empty");
+                }
+                
+                const firstItem = playlist.items[0];
+                if (!firstItem.type) {
+                    throw new Error("Backend error: Playlist items missing 'type' field");
+                }
+                
+                log(`Rendering: ${firstItem.title} (${firstItem.type})`);
+                
+                state.playlist = playlist;
+                state.content = firstItem;
+                state.currentIndex = 0;
+                state.status = 'playing';
+                
+                render();
+                scheduleNextContent();
+                
+            } catch (err) {
+                log(`ERROR: ${err.message}`);
+                state.error = err.message;
+                state.status = 'error';
+                render();
+            }
+        }
+        
+        // Initialize
+        function init() {
+            log("Fire TV Player initializing...");
+            calculateScale();
+            window.addEventListener('resize', () => {
+                calculateScale();
+                if (state.status === 'playing') render();
+            });
+            
+            state.status = 'loading';
+            render();
+            
+            fetchSchedule();
+            
+            // Refresh schedule every 5 minutes
+            setInterval(fetchSchedule, 5 * 60 * 1000);
+        }
+        
+        // Start the app
+        init();
+    </script>
 </body>
 </html>

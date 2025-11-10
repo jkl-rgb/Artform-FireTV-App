@@ -10,7 +10,6 @@
             padding: 0;
             box-sizing: border-box;
         }
-
         body, html {
             width: 100vw;
             height: 100vh;
@@ -18,142 +17,70 @@
             background: #000;
             font-family: Arial, sans-serif;
         }
-
-        .player-container {
+        #player-container {
             position: fixed;
             top: 0;
             left: 0;
-            right: 0;
-            bottom: 0;
             width: 100vw;
             height: 100vh;
             background: #000;
+            display: flex;
+            align-items: center;
+            justify-content: center;
         }
-
-        .content-display {
+        #content-display {
             width: 100%;
             height: 100%;
             position: relative;
         }
-
-        .content-display iframe,
-        .content-display img,
-        .content-display video {
+        #content-display img,
+        #content-display video,
+        #content-display iframe {
             width: 100%;
             height: 100%;
-            border: none;
             object-fit: contain;
+            border: none;
         }
-
-        /* Logo - Bottom Left */
-        .logo-overlay {
+        #logo {
             position: absolute;
-            bottom: 20px;
-            left: 20px;
-            height: 60px;
+            bottom: calc(1 / 52.3 * 100vw);
+            left: calc(1 / 52.3 * 100vw);
+            height: calc(1.2 / 52.3 * 100vw);
             z-index: 1000;
         }
-
-        .logo-overlay img {
+        #logo img {
             height: 100%;
             width: auto;
             object-fit: contain;
         }
-
-        /* Date & Time - Bottom Right */
-        .datetime-overlay {
+        #datetime {
             position: absolute;
-            bottom: 20px;
-            right: 20px;
-            background: #000;
+            bottom: calc(1 / 52.3 * 100vw);
+            right: calc(1 / 52.3 * 100vw);
+            width: calc(5 / 52.3 * 100vw);
+            padding: calc(0.4 / 52.3 * 100vw) calc(0.6 / 52.3 * 100vw);
+            background-color: #000000;
             color: white;
-            padding: 12px 18px;
-            border-radius: 8px;
-            text-align: center;
+            border-radius: calc(0.3 / 52.3 * 100vw);
             font-weight: 300;
+            text-align: center;
             z-index: 1000;
         }
-
-        .datetime-overlay .date {
-            font-size: 14px;
+        #datetime .date {
+            font-size: calc(0.35 / 52.3 * 100vw);
             line-height: 1.3;
         }
-
-        .datetime-overlay .time {
-            font-size: 18px;
+        #datetime .time {
+            font-size: calc(0.45 / 52.3 * 100vw);
             font-weight: 400;
-            margin-top: 4px;
+            margin-top: calc(0.05 / 52.3 * 100vw);
             line-height: 1.3;
         }
-
-        /* Loading State */
-        .loading-screen {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            width: 100%;
-            height: 100%;
-            color: #fff;
-        }
-
-        .loading-screen .spinner {
-            font-size: 48px;
-            margin-bottom: 20px;
-        }
-
-        .loading-screen .title {
-            font-size: 24px;
-        }
-
-        .loading-screen .device-info {
-            font-size: 14px;
-            color: #888;
-            margin-top: 10px;
-        }
-
-        /* Error State */
-        .error-screen {
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            width: 100%;
-            height: 100%;
-            color: #fff;
-            padding: 40px;
-            text-align: center;
-        }
-
-        .error-screen .icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-        }
-
-        .error-screen .title {
-            font-size: 28px;
-            margin-bottom: 15px;
-        }
-
-        .error-screen .message {
-            font-size: 16px;
-            color: #aaa;
-            max-width: 800px;
-            line-height: 1.6;
-        }
-
-        .error-screen .debug-info {
-            font-size: 12px;
-            color: #666;
-            margin-top: 30px;
-        }
-
-        /* Debug Panel */
-        .debug-panel {
+        #debug-info {
             position: absolute;
             bottom: 10px;
             left: 10px;
-            background: rgba(0,0,0,0.8);
+            background-color: rgba(0,0,0,0.8);
             color: #fff;
             padding: 8px 12px;
             border-radius: 6px;
@@ -162,326 +89,347 @@
             max-width: 400px;
             z-index: 999;
         }
-
-        .debug-panel .title {
+        #debug-info .title {
             font-size: 12px;
             font-weight: bold;
         }
-
-        .debug-panel .details {
+        #debug-info .details {
             font-size: 9px;
             color: #888;
             margin-top: 4px;
         }
+        .loading, .error {
+            width: 100%;
+            height: 100%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            color: #fff;
+            text-align: center;
+            padding: 40px;
+        }
+        .loading .icon { font-size: 48px; margin-bottom: 20px; }
+        .loading .message { font-size: 24px; }
+        .loading .device { font-size: 14px; color: #888; margin-top: 10px; }
+        .error .icon { font-size: 64px; margin-bottom: 20px; }
+        .error .title { font-size: 28px; margin-bottom: 15px; }
+        .error .message { font-size: 16px; color: #aaa; max-width: 800px; line-height: 1.6; }
+        .error .device { font-size: 12px; color: #666; margin-top: 30px; }
     </style>
 </head>
 <body>
-    <div class="player-container" id="playerContainer">
-        <!-- Content will be dynamically inserted here -->
-    </div>
-
-    <!-- ArtformTV Logo - Always Visible -->
-    <div class="logo-overlay">
-        <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6908b5a4fa4cc7ec770d76c7/97b153249_Artform_TV.png" alt="ArtformTV">
-    </div>
-
-    <!-- Date & Time - Always Visible -->
-    <div class="datetime-overlay" id="dateTimeOverlay">
-        <div class="date" id="dateDisplay"></div>
-        <div class="time" id="timeDisplay"></div>
-    </div>
-
-    <!-- Debug Panel (Optional) -->
-    <div class="debug-panel" id="debugPanel" style="display:none;">
-        <div class="title" id="debugTitle"></div>
-        <div class="details" id="debugDetails"></div>
+    <div id="player-container">
+        <div id="content-display"></div>
+        
+        <!-- ArtformTV Logo - Bottom Left -->
+        <div id="logo">
+            <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6908b5a4fa4cc7ec770d76c7/4a3b22c98_Artform_TV.png" alt="ArtformTV">
+        </div>
+        
+        <!-- Date & Time - Bottom Right -->
+        <div id="datetime">
+            <div class="date"></div>
+            <div class="time"></div>
+        </div>
+        
+        <!-- Debug Info - Bottom Left -->
+        <div id="debug-info">
+            <div class="title"></div>
+            <div class="details"></div>
+        </div>
     </div>
 
     <script>
-        // Configuration
         const BACKEND_URL = "https://artform-signage-app.onrender.com";
+        const SCREEN_WIDTH_INCHES = 52.3;
         
-        // Get device_id from URL parameter or use default
-        function getDeviceId() {
-            const urlParams = new URLSearchParams(window.location.search);
-            return urlParams.get('device_id') || 'firetv_001';
-        }
-
-        const DEVICE_ID = getDeviceId();
-
-        // State
-        let currentContent = null;
+        // Get device_id from URL parameter
+        const urlParams = new URLSearchParams(window.location.search);
+        const deviceId = urlParams.get('device_id') || 'firetv_001';
+        
         let currentPlaylist = null;
         let currentIndex = 0;
         let contentTimer = null;
+        let scrollInterval = null;
 
-        // Initialize
-        console.log(`[ArtformTV] Device ID: ${DEVICE_ID}`);
-        console.log(`[ArtformTV] Backend: ${BACKEND_URL}`);
+        console.log('[Player] Device ID:', deviceId);
 
-        // Update Date & Time
+        // Update date/time display
         function updateDateTime() {
             const now = new Date();
-            const dateDisplay = document.getElementById('dateDisplay');
-            const timeDisplay = document.getElementById('timeDisplay');
+            const dateEl = document.querySelector('#datetime .date');
+            const timeEl = document.querySelector('#datetime .time');
             
-            if (dateDisplay && timeDisplay) {
-                dateDisplay.textContent = now.toLocaleDateString('en-US', { 
-                    weekday: 'short', 
-                    month: 'short', 
-                    day: 'numeric' 
-                });
-                timeDisplay.textContent = now.toLocaleTimeString('en-US', { 
-                    hour: '2-digit', 
-                    minute: '2-digit' 
-                });
-            }
+            dateEl.textContent = now.toLocaleDateString('en-US', { 
+                weekday: 'short', 
+                month: 'short', 
+                day: 'numeric' 
+            });
+            timeEl.textContent = now.toLocaleTimeString('en-US', { 
+                hour: '2-digit', 
+                minute: '2-digit' 
+            });
         }
-
-        // Start date/time updater
-        updateDateTime();
+        
         setInterval(updateDateTime, 1000);
+        updateDateTime();
 
-        // Show Loading State
+        // Update debug info
+        function updateDebugInfo(title, details) {
+            document.querySelector('#debug-info .title').textContent = title;
+            document.querySelector('#debug-info .details').textContent = details;
+        }
+
+        // Show loading state
         function showLoading() {
-            const container = document.getElementById('playerContainer');
-            container.innerHTML = `
-                <div class="loading-screen">
-                    <div class="spinner">🔄</div>
-                    <div class="title">Loading ArtformTV Player...</div>
-                    <div class="device-info">Device: ${DEVICE_ID}</div>
+            document.getElementById('content-display').innerHTML = `
+                <div class="loading">
+                    <div class="icon">🔄</div>
+                    <div class="message">Loading ArtformTV Player...</div>
+                    <div class="device">Device: ${deviceId}</div>
                 </div>
             `;
         }
 
-        // Show Error State
+        // Show error state
         function showError(message) {
-            const container = document.getElementById('playerContainer');
-            container.innerHTML = `
-                <div class="error-screen">
+            document.getElementById('content-display').innerHTML = `
+                <div class="error">
                     <div class="icon">⚠️</div>
-                    <div class="title">Connection Error</div>
+                    <div class="title">Backend Error</div>
                     <div class="message">${message}</div>
-                    <div class="debug-info">Device: ${DEVICE_ID} | Backend: ${BACKEND_URL}</div>
+                    <div class="device">Device ID: ${deviceId} | Backend: ${BACKEND_URL}</div>
                 </div>
             `;
         }
 
-        // Update Debug Panel
-        function updateDebug(title, details) {
-            const debugPanel = document.getElementById('debugPanel');
-            const debugTitle = document.getElementById('debugTitle');
-            const debugDetails = document.getElementById('debugDetails');
-            
-            if (debugPanel && debugTitle && debugDetails) {
-                debugPanel.style.display = 'block';
-                debugTitle.textContent = title;
-                debugDetails.textContent = details;
-            }
-        }
-
-        // Render Content
+        // Render content based on type
         function renderContent(content) {
-            const container = document.getElementById('playerContainer');
+            const display = document.getElementById('content-display');
             
-            if (!content || !content.type) {
-                showError('Invalid content data received');
-                return;
+            // Clear any existing scroll interval
+            if (scrollInterval) {
+                clearInterval(scrollInterval);
+                scrollInterval = null;
             }
-
-            console.log(`[ArtformTV] Rendering: ${content.title} (${content.type})`);
             
-            updateDebug(
-                `${content.title} | ${currentIndex + 1}/${currentPlaylist?.items?.length || 0}`,
-                `Type: ${content.type} | Duration: ${content.duration || currentPlaylist?.default_duration || 'N/A'}s`
-            );
-
-            let contentHTML = '';
-
             switch (content.type) {
                 case 'image':
-                    contentHTML = `<div class="content-display"><img src="${content.url}" alt="${content.title}"></div>`;
+                    display.innerHTML = `<img src="${content.url}" alt="${content.title}">`;
                     break;
-
+                
                 case 'video':
-                    contentHTML = `<div class="content-display"><video src="${content.url}" autoplay muted loop></video></div>`;
+                    display.innerHTML = `<video src="${content.url}" autoplay muted loop></video>`;
                     break;
-
+                
                 case 'youtube':
                     const videoId = content.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/)?.[1];
-                    if (videoId) {
-                        contentHTML = `<div class="content-display"><iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1" allow="autoplay"></iframe></div>`;
+                    display.innerHTML = `
+                        <iframe 
+                            src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1"
+                            allow="autoplay"
+                        ></iframe>
+                    `;
+                    break;
+                
+                case 'url':
+                    display.innerHTML = `
+                        <iframe 
+                            id="url-iframe"
+                            src="${content.url}"
+                            sandbox="allow-same-origin allow-scripts allow-forms"
+                        ></iframe>
+                    `;
+                    
+                    // Handle auto-scroll if enabled
+                    if (content.autoScroll) {
+                        const delays = [500, 1000, 2000, 3000, 5000];
+                        delays.forEach(delay => {
+                            setTimeout(() => {
+                                try {
+                                    const iframe = document.getElementById('url-iframe');
+                                    const iframeDoc = iframe.contentDocument || iframe.contentWindow?.document;
+                                    
+                                    if (iframeDoc) {
+                                        const script = iframeDoc.createElement('script');
+                                        script.textContent = `
+                                            (function() {
+                                                var scrollPos = 0;
+                                                var scrollInterval = setInterval(function() {
+                                                    var maxScroll = Math.max(
+                                                        document.body.scrollHeight,
+                                                        document.documentElement.scrollHeight
+                                                    ) - window.innerHeight;
+                                                    
+                                                    scrollPos += 1;
+                                                    if (scrollPos >= maxScroll) {
+                                                        scrollPos = 0;
+                                                    }
+                                                    
+                                                    window.scrollTo(0, scrollPos);
+                                                }, 50);
+                                                
+                                                window.addEventListener('unload', function() {
+                                                    clearInterval(scrollInterval);
+                                                });
+                                            })();
+                                        `;
+                                        iframeDoc.body.appendChild(script);
+                                        console.log('[Player] Auto-scroll injected at', delay, 'ms');
+                                    }
+                                } catch (e) {
+                                    console.warn('[Player] Auto-scroll injection failed:', e.message);
+                                }
+                            }, delay);
+                        });
                     }
                     break;
-
-                case 'url':
-                    contentHTML = `<div class="content-display"><iframe src="${content.url}" sandbox="allow-same-origin allow-scripts allow-forms"></iframe></div>`;
-                    break;
-
+                
                 case 'message':
                     const message = content.message || {};
+                    const layout = message.layout || "full";
                     const zones = message.zones || [];
-                    const background = message.background || '#ffffff';
+                    const background = message.background || "#ffffff";
                     
-                    let zonesHTML = zones.map(zone => {
-                        const fontSize = (zone.fontSizeInches || 0.25) * 96; // Convert inches to pixels (96 DPI)
-                        const padding = (zone.paddingInches || 0.5) * 96;
+                    // Calculate grid template
+                    let gridTemplate;
+                    switch(layout) {
+                        case "full": gridTemplate = "1fr / 1fr"; break;
+                        case "split-vertical": gridTemplate = "1fr / 1fr 1fr"; break;
+                        case "split-horizontal": gridTemplate = "1fr 1fr / 1fr"; break;
+                        case "three-column": gridTemplate = "1fr / 1fr 1fr 1fr"; break;
+                        case "three-row": gridTemplate = "1fr 1fr 1fr / 1fr"; break;
+                        case "grid-2x2": gridTemplate = "1fr 1fr / 1fr 1fr"; break;
+                        case "grid-3x3": gridTemplate = "1fr 1fr 1fr / 1fr 1fr 1fr"; break;
+                        case "grid-4x4": gridTemplate = "1fr 1fr 1fr 1fr / 1fr 1fr 1fr 1fr"; break;
+                        default: gridTemplate = "1fr / 1fr";
+                    }
+                    
+                    let html = `
+                        <div style="
+                            width: 100%;
+                            height: 100%;
+                            background-color: ${layout === "full" ? background : "#ffffff"};
+                            display: grid;
+                            grid-template: ${gridTemplate};
+                        ">
+                    `;
+                    
+                    zones.forEach(zone => {
+                        const fontSize = (zone.fontSizeInches || 0.25) / SCREEN_WIDTH_INCHES * 100;
+                        const padding = (zone.paddingInches || 0.5) / SCREEN_WIDTH_INCHES * 100;
                         
-                        return `
+                        html += `
                             <div style="
                                 background-color: ${zone.backgroundColor || 'transparent'};
                                 color: ${zone.textColor || '#000000'};
-                                padding: ${padding}px;
-                                font-size: ${fontSize}px;
+                                padding: ${padding}vw;
+                                font-size: ${fontSize}vw;
                                 font-weight: ${zone.fontWeight || '400'};
                                 text-align: ${zone.textAlign || 'left'};
                                 line-height: 1.2;
+                                word-wrap: break-word;
+                                white-space: pre-wrap;
                                 overflow: hidden;
-                                display: flex;
-                                align-items: center;
-                                justify-content: ${zone.textAlign === 'center' ? 'center' : zone.textAlign === 'right' ? 'flex-end' : 'flex-start'};
                             ">
-                                <span style="white-space: pre-wrap; word-wrap: break-word;">${zone.text || ''}</span>
+                                ${zone.text || ''}
                             </div>
                         `;
-                    }).join('');
+                    });
                     
-                    contentHTML = `
-                        <div class="content-display" style="background-color: ${background}; display: flex; flex-direction: column; justify-content: center; align-items: stretch;">
-                            ${zonesHTML}
+                    html += '</div>';
+                    display.innerHTML = html;
+                    break;
+                
+                default:
+                    display.innerHTML = `
+                        <div style="display: flex; align-items: center; justify-content: center; color: #fff; font-size: 24px;">
+                            Content type "${content.type}" not yet supported
                         </div>
                     `;
-                    break;
-
-                default:
-                    contentHTML = `<div class="content-display" style="display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;">Unsupported content type: ${content.type}</div>`;
             }
-
-            container.innerHTML = contentHTML;
-
-            // Setup auto-scroll for URLs if enabled
-            if (content.type === 'url' && content.autoScroll) {
-                setupAutoScroll();
-            }
+            
+            // Update debug info
+            const duration = content.duration || currentPlaylist?.default_duration || 15;
+            updateDebugInfo(
+                `${content.title} | ${currentIndex + 1}/${currentPlaylist?.items?.length || 0}`,
+                `Type: ${content.type} | Duration: ${duration}s${content.autoScroll ? ' | Auto-Scroll: ENABLED' : ''}`
+            );
         }
 
-        // Setup Auto-Scroll for URL content
-        function setupAutoScroll() {
-            setTimeout(() => {
-                const iframe = document.querySelector('iframe');
-                if (iframe) {
-                    try {
-                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                        const script = iframeDoc.createElement('script');
-                        script.textContent = `
-                            (function() {
-                                var scrollPos = 0;
-                                var scrollInterval = setInterval(function() {
-                                    var maxScroll = Math.max(
-                                        document.body.scrollHeight,
-                                        document.documentElement.scrollHeight
-                                    ) - window.innerHeight;
-                                    
-                                    scrollPos += 1;
-                                    if (scrollPos >= maxScroll) {
-                                        scrollPos = 0;
-                                    }
-                                    
-                                    window.scrollTo(0, scrollPos);
-                                }, 50);
-                            })();
-                        `;
-                        iframeDoc.body.appendChild(script);
-                        console.log('[ArtformTV] Auto-scroll enabled');
-                    } catch (e) {
-                        console.log('[ArtformTV] Auto-scroll blocked by CORS');
-                    }
-                }
-            }, 2000);
-        }
-
-        // Schedule Next Content Item
-        function scheduleNextContent() {
-            if (contentTimer) {
-                clearTimeout(contentTimer);
+        // Play content from playlist
+        function playContent(index) {
+            if (!currentPlaylist || !currentPlaylist.items || currentPlaylist.items.length === 0) {
+                console.error('[Player] No playlist or empty playlist');
+                return;
             }
-
-            if (!currentContent || !currentPlaylist) return;
-
-            const duration = (currentContent.duration || currentPlaylist.default_duration || 15) * 1000;
+            
+            currentIndex = index % currentPlaylist.items.length;
+            const content = currentPlaylist.items[currentIndex];
+            
+            console.log('[Player] Playing:', content.title, '(index', currentIndex, ')');
+            renderContent(content);
+            
+            // Schedule next content
+            const duration = (content.duration || currentPlaylist.default_duration || 15) * 1000;
+            if (contentTimer) clearTimeout(contentTimer);
             
             contentTimer = setTimeout(() => {
-                if (currentPlaylist.items && currentPlaylist.items.length > 1) {
-                    currentIndex = (currentIndex + 1) % currentPlaylist.items.length;
-                    currentContent = currentPlaylist.items[currentIndex];
-                    renderContent(currentContent);
-                    scheduleNextContent();
-                }
+                playContent(currentIndex + 1);
             }, duration);
         }
 
-        // Fetch Schedule and Playlist
+        // Fetch schedule and content from backend
         async function fetchSchedule() {
             try {
-                showLoading();
-                console.log(`[ArtformTV] Fetching schedule for device: ${DEVICE_ID}`);
-                
-                const response = await fetch(`${BACKEND_URL}/v1/device/schedule?device_id=${DEVICE_ID}`);
+                console.log('[Player] Fetching schedule for device:', deviceId);
+                const response = await fetch(`${BACKEND_URL}/v1/device/schedule?device_id=${deviceId}`);
                 const data = await response.json();
-
+                
                 if (!data.ok || !data.schedules || data.schedules.length === 0) {
-                    showError('No active schedule found for this device. Please configure a schedule in the admin dashboard.');
+                    showError('No active schedule found for this device');
                     return;
                 }
-
+                
                 const schedule = data.schedules[0];
-                console.log(`[ArtformTV] Active schedule: ${schedule.name || 'unnamed'}`);
-
+                console.log('[Player] Active schedule:', schedule.name, 'mediaId:', schedule.mediaId);
+                
                 if (!schedule.mediaId) {
-                    showError('Schedule has no playlist assigned. Please assign a playlist in the admin dashboard.');
+                    showError('Schedule has no playlist assigned');
                     return;
                 }
-
-                // Fetch Playlist
+                
+                // Fetch playlist
                 const playlistRes = await fetch(`${BACKEND_URL}/v1/media/${schedule.mediaId}`);
                 const playlistData = await playlistRes.json();
-
+                
                 if (!playlistData.ok || !playlistData.playlist) {
                     showError('Failed to load playlist');
                     return;
                 }
-
-                const playlist = playlistData.playlist;
-                console.log(`[ArtformTV] Playlist loaded: ${playlist.name} (${playlist.items?.length || 0} items)`);
-
-                if (!playlist.items || playlist.items.length === 0) {
-                    showError('Playlist is empty. Please add content to the playlist.');
-                    return;
-                }
-
-                // Validate first item has type
-                if (!playlist.items[0].type) {
-                    showError('Backend error: Playlist items missing content data. Please sync data from admin dashboard.');
-                    return;
-                }
-
-                // Start playing
-                currentPlaylist = playlist;
-                currentIndex = 0;
-                currentContent = playlist.items[0];
                 
-                renderContent(currentContent);
-                scheduleNextContent();
-
+                currentPlaylist = playlistData.playlist;
+                console.log('[Player] Loaded playlist:', currentPlaylist.name, 'with', currentPlaylist.items?.length || 0, 'items');
+                
+                if (!currentPlaylist.items || currentPlaylist.items.length === 0) {
+                    showError('Playlist is empty');
+                    return;
+                }
+                
+                // Start playing
+                playContent(0);
+                
             } catch (error) {
-                console.error('[ArtformTV] Error:', error);
-                showError(`Connection error: ${error.message}. Check your network connection and backend URL.`);
+                console.error('[Player] Error:', error);
+                showError(`Connection error: ${error.message}`);
             }
         }
 
-        // Start Player
+        // Initialize
+        showLoading();
         fetchSchedule();
-
+        
         // Refresh schedule every 5 minutes
         setInterval(fetchSchedule, 5 * 60 * 1000);
     </script>

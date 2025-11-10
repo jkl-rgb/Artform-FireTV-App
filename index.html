@@ -104,10 +104,14 @@
         }
         
         .message-zone {
-            display: flex;
             overflow: hidden;
+            box-sizing: border-box;
+        }
+        
+        .message-zone-inner {
             word-wrap: break-word;
             white-space: pre-wrap;
+            width: 100%;
         }
         
         .datetime-widget {
@@ -124,13 +128,11 @@
     <div id="app" class="player-container"></div>
     
     <script>
-        // Configuration
         const BACKEND_URL = "https://artform-signage-app.onrender.com";
         const DEVICE_ID = "firetv_001";
-        const SCREEN_WIDTH_INCHES = 52.3;  // 60" diagonal 16:9
+        const SCREEN_WIDTH_INCHES = 52.3;
         const SCREEN_HEIGHT_INCHES = 29.4;
         
-        // Global state
         let state = {
             status: 'initializing',
             error: null,
@@ -141,7 +143,6 @@
             debugLog: []
         };
         
-        // Utility functions
         function log(msg) {
             const timestamp = new Date().toLocaleTimeString();
             console.log(`[${timestamp}] ${msg}`);
@@ -200,7 +201,6 @@
             return layouts[layout]?.[zoneId] || "1/1/2/2";
         }
         
-        // Rendering functions
         function renderLoading() {
             return `
                 <div class="loading-screen">
@@ -234,25 +234,25 @@
             const showDateTime = message.showDateTime || false;
             
             let zonesHtml = zones.map(zone => {
-                const fontSize = parseFloat(zone.fontSizeInches) || 0.5;
+                const fontSize = parseFloat(zone.fontSizeInches) || 0.25;
                 const padding = parseFloat(zone.paddingInches) || 0.5;
                 const textAlign = zone.textAlign || 'left';
-                const justifyContent = textAlign === 'left' ? 'flex-start' : textAlign === 'right' ? 'flex-end' : 'center';
                 
                 return `
                     <div class="message-zone" style="
                         grid-area: ${getZoneGridArea(layout, zone.id)};
                         background-color: ${zone.backgroundColor || 'transparent'};
                         color: ${zone.textColor || '#000000'};
-                        font-size: ${inchesToPx(fontSize)}px;
-                        font-weight: ${zone.fontWeight || '400'};
-                        text-align: ${textAlign};
                         padding: ${inchesToPx(padding)}px;
-                        line-height: 1.2;
-                        align-items: flex-start;
-                        justify-content: ${justifyContent};
                     ">
-                        ${zone.text || ''}
+                        <div class="message-zone-inner" style="
+                            font-size: ${inchesToPx(fontSize)}px;
+                            font-weight: ${zone.fontWeight || '400'};
+                            text-align: ${textAlign};
+                            line-height: 1.2;
+                        ">
+                            ${zone.text || ''}
+                        </div>
                     </div>
                 `;
             }).join('');
@@ -341,7 +341,6 @@
             
             app.innerHTML = html;
             
-            // Update date/time every second for message displays
             if (state.status === 'playing' && state.content?.type === 'message' && state.content?.message?.showDateTime) {
                 setTimeout(() => {
                     if (state.status === 'playing' && state.content?.type === 'message') {
@@ -351,7 +350,6 @@
             }
         }
         
-        // Content rotation
         function scheduleNextContent() {
             if (!state.playlist || !state.content) return;
             
@@ -371,7 +369,6 @@
             }, duration);
         }
         
-        // Fetch content from backend
         async function fetchSchedule() {
             try {
                 log(`Fetching schedule for device: ${DEVICE_ID}`);
@@ -427,7 +424,6 @@
             }
         }
         
-        // Initialize
         function init() {
             log("Fire TV Player initializing...");
             calculateScale();
@@ -441,11 +437,9 @@
             
             fetchSchedule();
             
-            // Refresh schedule every 5 minutes
             setInterval(fetchSchedule, 5 * 60 * 1000);
         }
         
-        // Start the app
         init();
     </script>
 </body>

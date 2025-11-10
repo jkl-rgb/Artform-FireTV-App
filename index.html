@@ -3,14 +3,14 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Fire TV Signage Player</title>
+    <title>ArtformTV Player</title>
     <style>
         * {
             margin: 0;
             padding: 0;
             box-sizing: border-box;
         }
-        
+
         body, html {
             width: 100vw;
             height: 100vh;
@@ -18,500 +18,472 @@
             background: #000;
             font-family: Arial, sans-serif;
         }
-        
+
         .player-container {
             position: fixed;
             top: 0;
             left: 0;
+            right: 0;
+            bottom: 0;
             width: 100vw;
             height: 100vh;
             background: #000;
-            z-index: 999999;
         }
-        
-        .loading-screen, .error-screen {
+
+        .content-display {
             width: 100%;
             height: 100%;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            flex-direction: column;
-            color: #fff;
-            text-align: center;
-            padding: 40px;
+            position: relative;
         }
-        
-        .loading-icon {
-            font-size: 48px;
-            margin-bottom: 20px;
-            animation: spin 2s linear infinite;
-        }
-        
-        @keyframes spin {
-            0% { transform: rotate(0deg); }
-            100% { transform: rotate(360deg); }
-        }
-        
-        .error-icon {
-            font-size: 64px;
-            margin-bottom: 20px;
-        }
-        
-        .content-frame {
-            width: 100%;
-            height: 100%;
-        }
-        
-        .content-frame iframe,
-        .content-frame img,
-        .content-frame video {
+
+        .content-display iframe,
+        .content-display img,
+        .content-display video {
             width: 100%;
             height: 100%;
             border: none;
             object-fit: contain;
         }
-        
-        .debug-overlay {
+
+        /* Logo - Bottom Left */
+        .logo-overlay {
+            position: absolute;
+            bottom: 20px;
+            left: 20px;
+            height: 60px;
+            z-index: 1000;
+        }
+
+        .logo-overlay img {
+            height: 100%;
+            width: auto;
+            object-fit: contain;
+        }
+
+        /* Date & Time - Bottom Right */
+        .datetime-overlay {
+            position: absolute;
+            bottom: 20px;
+            right: 20px;
+            background: #000;
+            color: white;
+            padding: 12px 18px;
+            border-radius: 8px;
+            text-align: center;
+            font-weight: 300;
+            z-index: 1000;
+        }
+
+        .datetime-overlay .date {
+            font-size: 14px;
+            line-height: 1.3;
+        }
+
+        .datetime-overlay .time {
+            font-size: 18px;
+            font-weight: 400;
+            margin-top: 4px;
+            line-height: 1.3;
+        }
+
+        /* Loading State */
+        .loading-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            color: #fff;
+        }
+
+        .loading-screen .spinner {
+            font-size: 48px;
+            margin-bottom: 20px;
+        }
+
+        .loading-screen .title {
+            font-size: 24px;
+        }
+
+        .loading-screen .device-info {
+            font-size: 14px;
+            color: #888;
+            margin-top: 10px;
+        }
+
+        /* Error State */
+        .error-screen {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            flex-direction: column;
+            width: 100%;
+            height: 100%;
+            color: #fff;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .error-screen .icon {
+            font-size: 64px;
+            margin-bottom: 20px;
+        }
+
+        .error-screen .title {
+            font-size: 28px;
+            margin-bottom: 15px;
+        }
+
+        .error-screen .message {
+            font-size: 16px;
+            color: #aaa;
+            max-width: 800px;
+            line-height: 1.6;
+        }
+
+        .error-screen .debug-info {
+            font-size: 12px;
+            color: #666;
+            margin-top: 30px;
+        }
+
+        /* Debug Panel */
+        .debug-panel {
             position: absolute;
             bottom: 10px;
             left: 10px;
-            background: rgba(0, 0, 0, 0.8);
+            background: rgba(0,0,0,0.8);
             color: #fff;
             padding: 8px 12px;
             border-radius: 6px;
             font-size: 11px;
             font-family: monospace;
             max-width: 400px;
-            z-index: 1000000;
+            z-index: 999;
         }
-        
-        .debug-title {
+
+        .debug-panel .title {
             font-size: 12px;
             font-weight: bold;
-            margin-bottom: 4px;
         }
-        
-        .debug-info {
+
+        .debug-panel .details {
             font-size: 9px;
             color: #888;
-        }
-        
-        .message-container {
-            width: 100%;
-            height: 100%;
-            display: grid;
-            position: relative;
-        }
-        
-        .message-zone {
-            overflow: hidden;
-            box-sizing: border-box;
-            display: block;
-        }
-        
-        .message-zone span {
-            display: inline-block;
-            margin: 0;
-            padding: 0;
-            text-indent: 0;
-            word-wrap: break-word;
-            white-space: pre-wrap;
-            width: 100%;
-        }
-        
-        .datetime-widget {
-            position: absolute;
-            background: #000;
-            color: white;
-            border-radius: 8px;
-            font-weight: 300;
-            text-align: center;
+            margin-top: 4px;
         }
     </style>
 </head>
 <body>
-    <div id="app" class="player-container"></div>
-    
+    <div class="player-container" id="playerContainer">
+        <!-- Content will be dynamically inserted here -->
+    </div>
+
+    <!-- ArtformTV Logo - Always Visible -->
+    <div class="logo-overlay">
+        <img src="https://qtrypzzcjebvfcihiynt.supabase.co/storage/v1/object/public/base44-prod/public/6908b5a4fa4cc7ec770d76c7/97b153249_Artform_TV.png" alt="ArtformTV">
+    </div>
+
+    <!-- Date & Time - Always Visible -->
+    <div class="datetime-overlay" id="dateTimeOverlay">
+        <div class="date" id="dateDisplay"></div>
+        <div class="time" id="timeDisplay"></div>
+    </div>
+
+    <!-- Debug Panel (Optional) -->
+    <div class="debug-panel" id="debugPanel" style="display:none;">
+        <div class="title" id="debugTitle"></div>
+        <div class="details" id="debugDetails"></div>
+    </div>
+
     <script>
+        // Configuration
         const BACKEND_URL = "https://artform-signage-app.onrender.com";
-        const DEVICE_ID = "firetv_001";
-        const SCREEN_WIDTH_INCHES = 52.3;
-        const SCREEN_HEIGHT_INCHES = 29.4;
         
-        let state = {
-            status: 'initializing',
-            error: null,
-            playlist: null,
-            currentIndex: 0,
-            content: null,
-            previewScale: 1,
-            debugLog: [],
-            scrollInterval: null
-        };
-        
-        function log(msg) {
-            const timestamp = new Date().toLocaleTimeString();
-            console.log(`[${timestamp}] ${msg}`);
-            state.debugLog.push(`[${timestamp}] ${msg}`);
-            if (state.debugLog.length > 30) state.debugLog.shift();
+        // Get device_id from URL parameter or use default
+        function getDeviceId() {
+            const urlParams = new URLSearchParams(window.location.search);
+            return urlParams.get('device_id') || 'firetv_001';
         }
-        
-        function calculateScale() {
-            const viewportWidth = window.innerWidth;
-            state.previewScale = viewportWidth / SCREEN_WIDTH_INCHES;
-        }
-        
-        function inchesToPx(inches) {
-            return inches * state.previewScale;
-        }
-        
-        function getGridTemplate(layout) {
-            const templates = {
-                "full": "1fr / 1fr",
-                "split-vertical": "1fr / 1fr 1fr",
-                "split-horizontal": "1fr 1fr / 1fr",
-                "three-column": "1fr / 1fr 1fr 1fr",
-                "three-row": "1fr 1fr 1fr / 1fr",
-                "grid-2x2": "1fr 1fr / 1fr 1fr",
-                "grid-3x3": "1fr 1fr 1fr / 1fr 1fr 1fr",
-                "grid-4x4": "1fr 1fr 1fr 1fr / 1fr 1fr 1fr 1fr"
-            };
-            return templates[layout] || "1fr / 1fr";
-        }
-        
-        function getZoneGridArea(layout, zoneId) {
-            const layouts = {
-                "full": { main: "1/1/2/2" },
-                "split-vertical": { left: "1/1/2/2", right: "1/2/2/3" },
-                "split-horizontal": { top: "1/1/2/2", bottom: "2/1/3/2" },
-                "three-column": { left: "1/1/2/2", center: "1/2/2/3", right: "1/3/2/4" },
-                "three-row": { top: "1/1/2/2", middle: "2/1/3/2", bottom: "3/1/4/2" },
-                "grid-2x2": {
-                    "top-left": "1/1/2/2",
-                    "top-right": "1/2/2/3",
-                    "bottom-left": "2/1/3/2",
-                    "bottom-right": "2/2/3/3"
-                },
-                "grid-3x3": {
-                    "row1-col1": "1/1/2/2", "row1-col2": "1/2/2/3", "row1-col3": "1/3/2/4",
-                    "row2-col1": "2/1/3/2", "row2-col2": "2/2/3/3", "row2-col3": "2/3/3/4",
-                    "row3-col1": "3/1/4/2", "row3-col2": "3/2/4/3", "row3-col3": "3/3/4/4"
-                },
-                "grid-4x4": {
-                    r1c1: "1/1/2/2", r1c2: "1/2/2/3", r1c3: "1/3/2/4", r1c4: "1/4/2/5",
-                    r2c1: "2/1/3/2", r2c2: "2/2/3/3", r2c3: "2/3/3/4", r2c4: "2/4/3/5",
-                    r3c1: "3/1/4/2", r3c2: "3/2/4/3", r3c3: "3/3/4/4", r3c4: "3/4/4/5",
-                    r4c1: "4/1/5/2", r4c2: "4/2/5/3", r4c3: "4/3/5/4", r4c4: "4/4/5/5"
-                }
-            };
-            return layouts[layout]?.[zoneId] || "1/1/2/2";
-        }
-        
-        function renderLoading() {
-            return `
-                <div class="loading-screen">
-                    <div class="loading-icon">🔄</div>
-                    <div style="font-size: 24px; margin-bottom: 10px;">Loading Fire TV Signage...</div>
-                    <div style="font-size: 14px; color: #888;">Device: ${DEVICE_ID}</div>
-                </div>
-            `;
-        }
-        
-        function renderError() {
-            return `
-                <div class="error-screen">
-                    <div class="error-icon">⚠️</div>
-                    <div style="font-size: 28px; margin-bottom: 15px;">Backend Error</div>
-                    <div style="font-size: 16px; color: #aaa; max-width: 800px; line-height: 1.6; margin-bottom: 20px;">
-                        ${state.error || 'Unable to load content'}
-                    </div>
-                    <div style="font-size: 12px; color: #666; margin-top: 20px;">
-                        Device ID: ${DEVICE_ID} | Backend: ${BACKEND_URL}
-                    </div>
-                </div>
-            `;
-        }
-        
-        function renderMessage(content) {
-            const message = content.message || {};
-            const layout = message.layout || "full";
-            const zones = message.zones || [];
-            const background = message.background || "#ffffff";
-            const showDateTime = message.showDateTime || false;
+
+        const DEVICE_ID = getDeviceId();
+
+        // State
+        let currentContent = null;
+        let currentPlaylist = null;
+        let currentIndex = 0;
+        let contentTimer = null;
+
+        // Initialize
+        console.log(`[ArtformTV] Device ID: ${DEVICE_ID}`);
+        console.log(`[ArtformTV] Backend: ${BACKEND_URL}`);
+
+        // Update Date & Time
+        function updateDateTime() {
+            const now = new Date();
+            const dateDisplay = document.getElementById('dateDisplay');
+            const timeDisplay = document.getElementById('timeDisplay');
             
-            let zonesHtml = zones.map(zone => {
-                const fontSize = parseFloat(zone.fontSizeInches) || 0.25;
-                const padding = parseFloat(zone.paddingInches) || 0.5;
-                const textAlign = zone.textAlign || 'left';
-                
-                return `
-                    <div class="message-zone" style="
-                        grid-area: ${getZoneGridArea(layout, zone.id)};
-                        background-color: ${zone.backgroundColor || 'transparent'};
-                        color: ${zone.textColor || '#000000'};
-                        padding: ${inchesToPx(padding)}px;
-                    ">
-                        <span style="
-                            font-size: ${inchesToPx(fontSize)}px;
-                            font-weight: ${zone.fontWeight || '400'};
-                            text-align: ${textAlign};
-                            line-height: 1.2;
-                        ">
-                            ${zone.text || ''}
-                        </span>
-                    </div>
-                `;
-            }).join('');
-            
-            let dateTimeHtml = '';
-            if (showDateTime) {
-                const now = new Date();
-                const dateStr = now.toLocaleDateString('en-US', { weekday: 'short', month: 'short', day: 'numeric' });
-                const timeStr = now.toLocaleTimeString('en-US', { hour: '2-digit', minute: '2-digit' });
-                
-                dateTimeHtml = `
-                    <div class="datetime-widget" style="
-                        bottom: ${inchesToPx(1)}px;
-                        right: ${inchesToPx(1)}px;
-                        width: ${inchesToPx(5)}px;
-                        padding: ${inchesToPx(0.4)}px ${inchesToPx(0.6)}px;
-                    ">
-                        <div style="font-size: ${inchesToPx(0.35)}px; line-height: 1.3;">${dateStr}</div>
-                        <div style="font-size: ${inchesToPx(0.45)}px; font-weight: 400; margin-top: ${inchesToPx(0.05)}px; line-height: 1.3;">${timeStr}</div>
-                    </div>
-                `;
-            }
-            
-            return `
-                <div class="message-container" style="
-                    background-color: ${layout === 'full' ? background : '#ffffff'};
-                    grid-template: ${getGridTemplate(layout)};
-                ">
-                    ${zonesHtml}
-                    ${dateTimeHtml}
-                </div>
-            `;
-        }
-        
-        function setupAutoScroll() {
-            if (state.content?.type === 'url' && state.content?.autoScroll) {
-                log("Attempting auto-scroll via JavaScript injection");
-                
-                const delays = [500, 1000, 2000, 3000, 5000];
-                
-                delays.forEach(delay => {
-                    setTimeout(() => {
-                        const iframe = document.querySelector('iframe');
-                        if (iframe && state.content?.type === 'url' && state.content?.autoScroll) {
-                            try {
-                                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
-                                
-                                if (iframeDoc) {
-                                    if (state.scrollInterval) {
-                                        clearInterval(state.scrollInterval);
-                                    }
-                                    
-                                    const script = iframeDoc.createElement('script');
-                                    script.textContent = `
-                                        (function() {
-                                            var scrollPos = 0;
-                                            var scrollInterval = setInterval(function() {
-                                                var maxScroll = Math.max(
-                                                    document.body.scrollHeight,
-                                                    document.documentElement.scrollHeight
-                                                ) - window.innerHeight;
-                                                
-                                                scrollPos += 1;
-                                                if (scrollPos >= maxScroll) {
-                                                    scrollPos = 0;
-                                                }
-                                                
-                                                window.scrollTo(0, scrollPos);
-                                            }, 50);
-                                            
-                                            window.addEventListener('unload', function() {
-                                                clearInterval(scrollInterval);
-                                            });
-                                        })();
-                                    `;
-                                    iframeDoc.body.appendChild(script);
-                                    log(`Auto-scroll injected after ${delay}ms`);
-                                }
-                            } catch (e) {
-                                log(`Failed to inject auto-scroll (${delay}ms): ${e.message}`);
-                            }
-                        }
-                    }, delay);
+            if (dateDisplay && timeDisplay) {
+                dateDisplay.textContent = now.toLocaleDateString('en-US', { 
+                    weekday: 'short', 
+                    month: 'short', 
+                    day: 'numeric' 
+                });
+                timeDisplay.textContent = now.toLocaleTimeString('en-US', { 
+                    hour: '2-digit', 
+                    minute: '2-digit' 
                 });
             }
         }
-        
-        function clearAutoScroll() {
-            if (state.scrollInterval) {
-                clearInterval(state.scrollInterval);
-                state.scrollInterval = null;
-                log("Auto-scroll cleared");
-            }
-        }
-        
-        function renderContent(content) {
-            if (!content) return '';
-            
-            clearAutoScroll();
-            
-            switch (content.type) {
-                case 'image':
-                    return `<div class="content-frame"><img src="${content.url}" alt="${content.title}"></div>`;
-                
-                case 'video':
-                    return `<div class="content-frame"><video src="${content.url}" autoplay muted loop></video></div>`;
-                
-                case 'youtube':
-                    const videoId = content.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/)?.[1];
-                    return `<div class="content-frame"><iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1" allow="autoplay"></iframe></div>`;
-                
-                case 'url':
-                    setTimeout(() => setupAutoScroll(), 100);
-                    return `<div class="content-frame"><iframe src="${content.url}" sandbox="allow-same-origin allow-scripts allow-forms"></iframe></div>`;
-                
-                case 'message':
-                    return renderMessage(content);
-                
-                default:
-                    return `<div class="error-screen"><div style="font-size: 24px;">Unsupported content type: ${content.type}</div></div>`;
-            }
-        }
-        
-        function renderDebug() {
-            if (!state.content) return '';
-            
-            return `
-                <div class="debug-overlay">
-                    <div class="debug-title">
-                        ${state.content.title || 'Playing'} | ${state.currentIndex + 1}/${state.playlist?.items?.length || 0}
-                    </div>
-                    <div class="debug-info">
-                        Type: ${state.content.type || 'undefined'} | Duration: ${state.content.duration || state.playlist?.default_duration || 'N/A'}s
-                        ${state.content.autoScroll ? ' | Auto-Scroll: ON' : ''}
-                    </div>
+
+        // Start date/time updater
+        updateDateTime();
+        setInterval(updateDateTime, 1000);
+
+        // Show Loading State
+        function showLoading() {
+            const container = document.getElementById('playerContainer');
+            container.innerHTML = `
+                <div class="loading-screen">
+                    <div class="spinner">🔄</div>
+                    <div class="title">Loading ArtformTV Player...</div>
+                    <div class="device-info">Device: ${DEVICE_ID}</div>
                 </div>
             `;
         }
-        
-        function render() {
-            const app = document.getElementById('app');
+
+        // Show Error State
+        function showError(message) {
+            const container = document.getElementById('playerContainer');
+            container.innerHTML = `
+                <div class="error-screen">
+                    <div class="icon">⚠️</div>
+                    <div class="title">Connection Error</div>
+                    <div class="message">${message}</div>
+                    <div class="debug-info">Device: ${DEVICE_ID} | Backend: ${BACKEND_URL}</div>
+                </div>
+            `;
+        }
+
+        // Update Debug Panel
+        function updateDebug(title, details) {
+            const debugPanel = document.getElementById('debugPanel');
+            const debugTitle = document.getElementById('debugTitle');
+            const debugDetails = document.getElementById('debugDetails');
             
-            let html = '';
-            if (state.status === 'initializing' || state.status === 'loading') {
-                html = renderLoading();
-            } else if (state.status === 'error') {
-                html = renderError();
-            } else if (state.status === 'playing' && state.content) {
-                html = renderContent(state.content) + renderDebug();
-            }
-            
-            app.innerHTML = html;
-            
-            if (state.status === 'playing' && state.content?.type === 'message' && state.content?.message?.showDateTime) {
-                setTimeout(() => {
-                    if (state.status === 'playing' && state.content?.type === 'message') {
-                        render();
-                    }
-                }, 1000);
+            if (debugPanel && debugTitle && debugDetails) {
+                debugPanel.style.display = 'block';
+                debugTitle.textContent = title;
+                debugDetails.textContent = details;
             }
         }
-        
-        function scheduleNextContent() {
-            if (!state.playlist || !state.content) return;
+
+        // Render Content
+        function renderContent(content) {
+            const container = document.getElementById('playerContainer');
             
-            const duration = (state.content.duration || state.playlist.default_duration || 15) * 1000;
-            log(`Showing "${state.content.title}" for ${duration/1000}s`);
+            if (!content || !content.type) {
+                showError('Invalid content data received');
+                return;
+            }
+
+            console.log(`[ArtformTV] Rendering: ${content.title} (${content.type})`);
             
+            updateDebug(
+                `${content.title} | ${currentIndex + 1}/${currentPlaylist?.items?.length || 0}`,
+                `Type: ${content.type} | Duration: ${content.duration || currentPlaylist?.default_duration || 'N/A'}s`
+            );
+
+            let contentHTML = '';
+
+            switch (content.type) {
+                case 'image':
+                    contentHTML = `<div class="content-display"><img src="${content.url}" alt="${content.title}"></div>`;
+                    break;
+
+                case 'video':
+                    contentHTML = `<div class="content-display"><video src="${content.url}" autoplay muted loop></video></div>`;
+                    break;
+
+                case 'youtube':
+                    const videoId = content.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/)?.[1];
+                    if (videoId) {
+                        contentHTML = `<div class="content-display"><iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1" allow="autoplay"></iframe></div>`;
+                    }
+                    break;
+
+                case 'url':
+                    contentHTML = `<div class="content-display"><iframe src="${content.url}" sandbox="allow-same-origin allow-scripts allow-forms"></iframe></div>`;
+                    break;
+
+                case 'message':
+                    const message = content.message || {};
+                    const zones = message.zones || [];
+                    const background = message.background || '#ffffff';
+                    
+                    let zonesHTML = zones.map(zone => {
+                        const fontSize = (zone.fontSizeInches || 0.25) * 96; // Convert inches to pixels (96 DPI)
+                        const padding = (zone.paddingInches || 0.5) * 96;
+                        
+                        return `
+                            <div style="
+                                background-color: ${zone.backgroundColor || 'transparent'};
+                                color: ${zone.textColor || '#000000'};
+                                padding: ${padding}px;
+                                font-size: ${fontSize}px;
+                                font-weight: ${zone.fontWeight || '400'};
+                                text-align: ${zone.textAlign || 'left'};
+                                line-height: 1.2;
+                                overflow: hidden;
+                                display: flex;
+                                align-items: center;
+                                justify-content: ${zone.textAlign === 'center' ? 'center' : zone.textAlign === 'right' ? 'flex-end' : 'flex-start'};
+                            ">
+                                <span style="white-space: pre-wrap; word-wrap: break-word;">${zone.text || ''}</span>
+                            </div>
+                        `;
+                    }).join('');
+                    
+                    contentHTML = `
+                        <div class="content-display" style="background-color: ${background}; display: flex; flex-direction: column; justify-content: center; align-items: stretch;">
+                            ${zonesHTML}
+                        </div>
+                    `;
+                    break;
+
+                default:
+                    contentHTML = `<div class="content-display" style="display:flex;align-items:center;justify-content:center;color:#fff;font-size:24px;">Unsupported content type: ${content.type}</div>`;
+            }
+
+            container.innerHTML = contentHTML;
+
+            // Setup auto-scroll for URLs if enabled
+            if (content.type === 'url' && content.autoScroll) {
+                setupAutoScroll();
+            }
+        }
+
+        // Setup Auto-Scroll for URL content
+        function setupAutoScroll() {
             setTimeout(() => {
-                if (state.playlist.items && state.playlist.items.length > 1) {
-                    state.currentIndex = (state.currentIndex + 1) % state.playlist.items.length;
-                    state.content = state.playlist.items[state.currentIndex];
-                    log(`Switching to item ${state.currentIndex + 1}/${state.playlist.items.length}`);
-                    render();
-                    scheduleNextContent();
-                } else {
+                const iframe = document.querySelector('iframe');
+                if (iframe) {
+                    try {
+                        const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
+                        const script = iframeDoc.createElement('script');
+                        script.textContent = `
+                            (function() {
+                                var scrollPos = 0;
+                                var scrollInterval = setInterval(function() {
+                                    var maxScroll = Math.max(
+                                        document.body.scrollHeight,
+                                        document.documentElement.scrollHeight
+                                    ) - window.innerHeight;
+                                    
+                                    scrollPos += 1;
+                                    if (scrollPos >= maxScroll) {
+                                        scrollPos = 0;
+                                    }
+                                    
+                                    window.scrollTo(0, scrollPos);
+                                }, 50);
+                            })();
+                        `;
+                        iframeDoc.body.appendChild(script);
+                        console.log('[ArtformTV] Auto-scroll enabled');
+                    } catch (e) {
+                        console.log('[ArtformTV] Auto-scroll blocked by CORS');
+                    }
+                }
+            }, 2000);
+        }
+
+        // Schedule Next Content Item
+        function scheduleNextContent() {
+            if (contentTimer) {
+                clearTimeout(contentTimer);
+            }
+
+            if (!currentContent || !currentPlaylist) return;
+
+            const duration = (currentContent.duration || currentPlaylist.default_duration || 15) * 1000;
+            
+            contentTimer = setTimeout(() => {
+                if (currentPlaylist.items && currentPlaylist.items.length > 1) {
+                    currentIndex = (currentIndex + 1) % currentPlaylist.items.length;
+                    currentContent = currentPlaylist.items[currentIndex];
+                    renderContent(currentContent);
                     scheduleNextContent();
                 }
             }, duration);
         }
-        
+
+        // Fetch Schedule and Playlist
         async function fetchSchedule() {
             try {
-                log(`Fetching schedule for device: ${DEVICE_ID}`);
+                showLoading();
+                console.log(`[ArtformTV] Fetching schedule for device: ${DEVICE_ID}`);
+                
                 const response = await fetch(`${BACKEND_URL}/v1/device/schedule?device_id=${DEVICE_ID}`);
                 const data = await response.json();
-                
+
                 if (!data.ok || !data.schedules || data.schedules.length === 0) {
-                    throw new Error("No active schedule found for this device");
+                    showError('No active schedule found for this device. Please configure a schedule in the admin dashboard.');
+                    return;
                 }
-                
+
                 const schedule = data.schedules[0];
-                log(`Active schedule: ${schedule.name || 'unnamed'}`);
-                
+                console.log(`[ArtformTV] Active schedule: ${schedule.name || 'unnamed'}`);
+
                 if (!schedule.mediaId) {
-                    throw new Error("Schedule has no playlist assigned");
+                    showError('Schedule has no playlist assigned. Please assign a playlist in the admin dashboard.');
+                    return;
                 }
-                
-                log(`Fetching playlist: ${schedule.mediaId}`);
+
+                // Fetch Playlist
                 const playlistRes = await fetch(`${BACKEND_URL}/v1/media/${schedule.mediaId}`);
                 const playlistData = await playlistRes.json();
-                
+
                 if (!playlistData.ok || !playlistData.playlist) {
-                    throw new Error("Failed to load playlist");
+                    showError('Failed to load playlist');
+                    return;
                 }
-                
+
                 const playlist = playlistData.playlist;
-                log(`Loaded playlist: ${playlist.name} (${playlist.items?.length || 0} items)`);
-                
+                console.log(`[ArtformTV] Playlist loaded: ${playlist.name} (${playlist.items?.length || 0} items)`);
+
                 if (!playlist.items || playlist.items.length === 0) {
-                    throw new Error("Playlist is empty");
+                    showError('Playlist is empty. Please add content to the playlist.');
+                    return;
                 }
-                
-                const firstItem = playlist.items[0];
-                if (!firstItem.type) {
-                    throw new Error("Backend error: Playlist items missing 'type' field");
+
+                // Validate first item has type
+                if (!playlist.items[0].type) {
+                    showError('Backend error: Playlist items missing content data. Please sync data from admin dashboard.');
+                    return;
                 }
+
+                // Start playing
+                currentPlaylist = playlist;
+                currentIndex = 0;
+                currentContent = playlist.items[0];
                 
-                log(`Rendering: ${firstItem.title} (${firstItem.type})`);
-                
-                state.playlist = playlist;
-                state.content = firstItem;
-                state.currentIndex = 0;
-                state.status = 'playing';
-                
-                render();
+                renderContent(currentContent);
                 scheduleNextContent();
-                
-            } catch (err) {
-                log(`ERROR: ${err.message}`);
-                state.error = err.message;
-                state.status = 'error';
-                render();
+
+            } catch (error) {
+                console.error('[ArtformTV] Error:', error);
+                showError(`Connection error: ${error.message}. Check your network connection and backend URL.`);
             }
         }
-        
-        function init() {
-            log("Fire TV Player initializing...");
-            calculateScale();
-            window.addEventListener('resize', () => {
-                calculateScale();
-                if (state.status === 'playing') render();
-            });
-            
-            state.status = 'loading';
-            render();
-            
-            fetchSchedule();
-            
-            setInterval(fetchSchedule, 5 * 60 * 1000);
-        }
-        
-        init();
+
+        // Start Player
+        fetchSchedule();
+
+        // Refresh schedule every 5 minutes
+        setInterval(fetchSchedule, 5 * 60 * 1000);
     </script>
 </body>
 </html>

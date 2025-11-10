@@ -109,9 +109,11 @@
             display: block;
         }
         
-        .message-zone p {
+        .message-zone span {
+            display: inline-block;
             margin: 0;
             padding: 0;
+            text-indent: 0;
             word-wrap: break-word;
             white-space: pre-wrap;
             width: 100%;
@@ -249,14 +251,14 @@
                         color: ${zone.textColor || '#000000'};
                         padding: ${inchesToPx(padding)}px;
                     ">
-                        <p style="
+                        <span style="
                             font-size: ${inchesToPx(fontSize)}px;
                             font-weight: ${zone.fontWeight || '400'};
                             text-align: ${textAlign};
                             line-height: 1.2;
                         ">
                             ${zone.text || ''}
-                        </p>
+                        </span>
                     </div>
                 `;
             }).join('');
@@ -293,47 +295,50 @@
         
         function setupAutoScroll() {
             if (state.content?.type === 'url' && state.content?.autoScroll) {
-                log("Attempting to enable auto-scroll for URL content");
+                log("Attempting auto-scroll via JavaScript injection");
                 
-                // Try multiple times with delays to catch iframe loading
-                const attempts = [100, 500, 1000, 2000, 3000, 5000];
+                const delays = [500, 1000, 2000, 3000, 5000];
                 
-                attempts.forEach(delay => {
+                delays.forEach(delay => {
                     setTimeout(() => {
                         const iframe = document.querySelector('iframe');
                         if (iframe && state.content?.type === 'url' && state.content?.autoScroll) {
                             try {
-                                const iframeWin = iframe.contentWindow;
+                                const iframeDoc = iframe.contentDocument || iframe.contentWindow.document;
                                 
-                                if (state.scrollInterval) {
-                                    clearInterval(state.scrollInterval);
-                                }
-                                
-                                let scrollPos = 0;
-                                
-                                state.scrollInterval = setInterval(() => {
-                                    try {
-                                        const doc = iframeWin.document;
-                                        const maxScroll = Math.max(
-                                            doc.body.scrollHeight,
-                                            doc.documentElement.scrollHeight
-                                        ) - iframe.clientHeight;
-                                        
-                                        scrollPos += 1; // 1px per 50ms
-                                        
-                                        if (scrollPos >= maxScroll) {
-                                            scrollPos = 0;
-                                        }
-                                        
-                                        iframeWin.scrollTo(0, scrollPos);
-                                    } catch (e) {
-                                        // CORS blocked
+                                if (iframeDoc) {
+                                    if (state.scrollInterval) {
+                                        clearInterval(state.scrollInterval);
                                     }
-                                }, 50);
-                                
-                                log(`Auto-scroll initialized after ${delay}ms`);
+                                    
+                                    const script = iframeDoc.createElement('script');
+                                    script.textContent = `
+                                        (function() {
+                                            var scrollPos = 0;
+                                            var scrollInterval = setInterval(function() {
+                                                var maxScroll = Math.max(
+                                                    document.body.scrollHeight,
+                                                    document.documentElement.scrollHeight
+                                                ) - window.innerHeight;
+                                                
+                                                scrollPos += 1;
+                                                if (scrollPos >= maxScroll) {
+                                                    scrollPos = 0;
+                                                }
+                                                
+                                                window.scrollTo(0, scrollPos);
+                                            }, 50);
+                                            
+                                            window.addEventListener('unload', function() {
+                                                clearInterval(scrollInterval);
+                                            });
+                                        })();
+                                    `;
+                                    iframeDoc.body.appendChild(script);
+                                    log(`Auto-scroll injected after ${delay}ms`);
+                                }
                             } catch (e) {
-                                log(`Auto-scroll failed (${delay}ms): ${e.message}`);
+                                log(`Failed to inject auto-scroll (${delay}ms): ${e.message}`);
                             }
                         }
                     }, delay);
@@ -387,7 +392,7 @@
                     </div>
                     <div class="debug-info">
                         Type: ${state.content.type || 'undefined'} | Duration: ${state.content.duration || state.playlist?.default_duration || 'N/A'}s
-                        ${state.content.autoScroll ? ' | Auto-Scroll: ENABLED' : ''}
+                        ${state.content.autoScroll ? ' | Auto-Scroll: ON' : ''}
                     </div>
                 </div>
             `;

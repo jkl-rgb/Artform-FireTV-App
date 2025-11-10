@@ -108,10 +108,11 @@
             box-sizing: border-box;
         }
         
-        .message-zone-inner {
+        .message-zone-text {
             word-wrap: break-word;
             white-space: pre-wrap;
             width: 100%;
+            height: 100%;
         }
         
         .datetime-widget {
@@ -140,7 +141,8 @@
             currentIndex: 0,
             content: null,
             previewScale: 1,
-            debugLog: []
+            debugLog: [],
+            scrollInterval: null
         };
         
         function log(msg) {
@@ -245,7 +247,7 @@
                         color: ${zone.textColor || '#000000'};
                         padding: ${inchesToPx(padding)}px;
                     ">
-                        <div class="message-zone-inner" style="
+                        <div class="message-zone-text" style="
                             font-size: ${inchesToPx(fontSize)}px;
                             font-weight: ${zone.fontWeight || '400'};
                             text-align: ${textAlign};
@@ -287,8 +289,48 @@
             `;
         }
         
+        function setupAutoScroll() {
+            if (state.content?.type === 'url' && state.content?.autoScroll) {
+                log("Setting up auto-scroll for URL content");
+                
+                setTimeout(() => {
+                    const iframe = document.querySelector('iframe');
+                    if (iframe) {
+                        iframe.onload = function() {
+                            try {
+                                const iframeWin = iframe.contentWindow;
+                                let scrollPos = 0;
+                                
+                                state.scrollInterval = setInterval(() => {
+                                    scrollPos += 1;
+                                    const maxScroll = iframeWin.document.body.scrollHeight - iframe.clientHeight;
+                                    
+                                    if (scrollPos >= maxScroll) {
+                                        scrollPos = 0;
+                                    }
+                                    
+                                    iframeWin.scrollTo(0, scrollPos);
+                                }, 50);
+                            } catch (e) {
+                                log(`Cannot auto-scroll iframe (CORS): ${e.message}`);
+                            }
+                        };
+                    }
+                }, 100);
+            }
+        }
+        
+        function clearAutoScroll() {
+            if (state.scrollInterval) {
+                clearInterval(state.scrollInterval);
+                state.scrollInterval = null;
+            }
+        }
+        
         function renderContent(content) {
             if (!content) return '';
+            
+            clearAutoScroll();
             
             switch (content.type) {
                 case 'image':
@@ -302,6 +344,7 @@
                     return `<div class="content-frame"><iframe src="https://www.youtube.com/embed/${videoId}?autoplay=1&mute=1&controls=0&loop=1" allow="autoplay"></iframe></div>`;
                 
                 case 'url':
+                    setTimeout(() => setupAutoScroll(), 100);
                     return `<div class="content-frame"><iframe src="${content.url}"></iframe></div>`;
                 
                 case 'message':
@@ -322,6 +365,7 @@
                     </div>
                     <div class="debug-info">
                         Type: ${state.content.type || 'undefined'} | Duration: ${state.content.duration || state.playlist?.default_duration || 'N/A'}s
+                        ${state.content.autoScroll ? ' | Auto-Scroll: ON' : ''}
                     </div>
                 </div>
             `;

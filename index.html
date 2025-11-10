@@ -106,13 +106,15 @@
         .message-zone {
             overflow: hidden;
             box-sizing: border-box;
+            display: block;
         }
         
-        .message-zone-text {
+        .message-zone p {
+            margin: 0;
+            padding: 0;
             word-wrap: break-word;
             white-space: pre-wrap;
             width: 100%;
-            height: 100%;
         }
         
         .datetime-widget {
@@ -247,14 +249,14 @@
                         color: ${zone.textColor || '#000000'};
                         padding: ${inchesToPx(padding)}px;
                     ">
-                        <div class="message-zone-text" style="
+                        <p style="
                             font-size: ${inchesToPx(fontSize)}px;
                             font-weight: ${zone.fontWeight || '400'};
                             text-align: ${textAlign};
                             line-height: 1.2;
                         ">
                             ${zone.text || ''}
-                        </div>
+                        </p>
                     </div>
                 `;
             }).join('');
@@ -291,32 +293,51 @@
         
         function setupAutoScroll() {
             if (state.content?.type === 'url' && state.content?.autoScroll) {
-                log("Setting up auto-scroll for URL content");
+                log("Attempting to enable auto-scroll for URL content");
                 
-                setTimeout(() => {
-                    const iframe = document.querySelector('iframe');
-                    if (iframe) {
-                        iframe.onload = function() {
+                // Try multiple times with delays to catch iframe loading
+                const attempts = [100, 500, 1000, 2000, 3000, 5000];
+                
+                attempts.forEach(delay => {
+                    setTimeout(() => {
+                        const iframe = document.querySelector('iframe');
+                        if (iframe && state.content?.type === 'url' && state.content?.autoScroll) {
                             try {
                                 const iframeWin = iframe.contentWindow;
+                                
+                                if (state.scrollInterval) {
+                                    clearInterval(state.scrollInterval);
+                                }
+                                
                                 let scrollPos = 0;
                                 
                                 state.scrollInterval = setInterval(() => {
-                                    scrollPos += 1;
-                                    const maxScroll = iframeWin.document.body.scrollHeight - iframe.clientHeight;
-                                    
-                                    if (scrollPos >= maxScroll) {
-                                        scrollPos = 0;
+                                    try {
+                                        const doc = iframeWin.document;
+                                        const maxScroll = Math.max(
+                                            doc.body.scrollHeight,
+                                            doc.documentElement.scrollHeight
+                                        ) - iframe.clientHeight;
+                                        
+                                        scrollPos += 1; // 1px per 50ms
+                                        
+                                        if (scrollPos >= maxScroll) {
+                                            scrollPos = 0;
+                                        }
+                                        
+                                        iframeWin.scrollTo(0, scrollPos);
+                                    } catch (e) {
+                                        // CORS blocked
                                     }
-                                    
-                                    iframeWin.scrollTo(0, scrollPos);
                                 }, 50);
+                                
+                                log(`Auto-scroll initialized after ${delay}ms`);
                             } catch (e) {
-                                log(`Cannot auto-scroll iframe (CORS): ${e.message}`);
+                                log(`Auto-scroll failed (${delay}ms): ${e.message}`);
                             }
-                        };
-                    }
-                }, 100);
+                        }
+                    }, delay);
+                });
             }
         }
         
@@ -324,6 +345,7 @@
             if (state.scrollInterval) {
                 clearInterval(state.scrollInterval);
                 state.scrollInterval = null;
+                log("Auto-scroll cleared");
             }
         }
         
@@ -345,7 +367,7 @@
                 
                 case 'url':
                     setTimeout(() => setupAutoScroll(), 100);
-                    return `<div class="content-frame"><iframe src="${content.url}"></iframe></div>`;
+                    return `<div class="content-frame"><iframe src="${content.url}" sandbox="allow-same-origin allow-scripts allow-forms"></iframe></div>`;
                 
                 case 'message':
                     return renderMessage(content);
@@ -365,7 +387,7 @@
                     </div>
                     <div class="debug-info">
                         Type: ${state.content.type || 'undefined'} | Duration: ${state.content.duration || state.playlist?.default_duration || 'N/A'}s
-                        ${state.content.autoScroll ? ' | Auto-Scroll: ON' : ''}
+                        ${state.content.autoScroll ? ' | Auto-Scroll: ENABLED' : ''}
                     </div>
                 </div>
             `;

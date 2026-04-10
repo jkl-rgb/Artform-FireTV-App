@@ -151,7 +151,7 @@
         function showLoading() {
             document.getElementById('content-display').innerHTML = `
                 <div class="loading">
-                    <div class="icon">🔄</div>
+                    <div class="icon">ð</div>
                     <div class="message">Loading ArtformTV Player...</div>
                     <div class="device">Device: ${deviceId}</div>
                 </div>
@@ -162,7 +162,7 @@
         function showError(message) {
             document.getElementById('content-display').innerHTML = `
                 <div class="error">
-                    <div class="icon">⚠️</div>
+                    <div class="icon">â ï¸</div>
                     <div class="title">Backend Error</div>
                     <div class="message">${message}</div>
                     <div class="device">Device ID: ${deviceId} | Backend: ${BACKEND_URL}</div>
@@ -186,8 +186,9 @@
                     break;
                 
                 case 'video':
-                    display.innerHTML = `<video src="${content.url}" autoplay muted loop></video>`;
-                    break;
+          display.innerHTML = `<video src="${content.url}" autoplay muted></video>`;
+          display.querySelector('video').onended = () => advancePlaylist();
+          break;
                 
                 case 'youtube':
                     const videoId = content.url.match(/(?:youtube\.com\/watch\?v=|youtu\.be\/)([^&]+)/)?.[1];

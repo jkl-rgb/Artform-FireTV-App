@@ -151,7 +151,7 @@
         function showLoading() {
             document.getElementById('content-display').innerHTML = `
                 <div class="loading">
-                    <div class="icon">ð</div>
+                    <div class="icon">Ã°ÂÂÂ</div>
                     <div class="message">Loading ArtformTV Player...</div>
                     <div class="device">Device: ${deviceId}</div>
                 </div>
@@ -162,7 +162,7 @@
         function showError(message) {
             document.getElementById('content-display').innerHTML = `
                 <div class="error">
-                    <div class="icon">â ï¸</div>
+                    <div class="icon">Ã¢ÂÂ Ã¯Â¸Â</div>
                     <div class="title">Backend Error</div>
                     <div class="message">${message}</div>
                     <div class="device">Device ID: ${deviceId} | Backend: ${BACKEND_URL}</div>
@@ -331,13 +331,17 @@
             console.log('[Player] Playing:', content.title, '(index', currentIndex, ')');
             renderContent(content);
             
-            // Schedule next content
-            const duration = (content.duration || currentPlaylist.default_duration || 15) * 1000;
-            if (contentTimer) clearTimeout(contentTimer);
-            
-            contentTimer = setTimeout(() => {
-                playContent(currentIndex + 1);
-            }, duration);
+                        // Schedule next content (videos use onended, not a timer)
+            if (content.type !== 'video') {
+                const duration = (content.duration || currentPlaylist.default_duration || 15) * 1000;
+                if (contentTimer) clearTimeout(contentTimer);
+                contentTimer = setTimeout(() => {
+                    playContent(currentIndex + 1);
+                }, duration);
+            } else {
+                if (contentTimer) clearTimeout(contentTimer);
+                contentTimer = null;
+            }
         }
 
         // Fetch schedule and content from backend

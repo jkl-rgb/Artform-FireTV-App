@@ -151,7 +151,7 @@
         function showLoading() {
             document.getElementById('content-display').innerHTML = `
                 <div class="loading">
-                    <div class="icon">Ã°ÂÂÂ</div>
+                    <div class="icon">ÃÂ°ÃÂÃÂÃÂ</div>
                     <div class="message">Loading ArtformTV Player...</div>
                     <div class="device">Device: ${deviceId}</div>
                 </div>
@@ -162,7 +162,7 @@
         function showError(message) {
             document.getElementById('content-display').innerHTML = `
                 <div class="error">
-                    <div class="icon">Ã¢ÂÂ Ã¯Â¸Â</div>
+                    <div class="icon">ÃÂ¢ÃÂÃÂ ÃÂ¯ÃÂ¸ÃÂ</div>
                     <div class="title">Backend Error</div>
                     <div class="message">${message}</div>
                     <div class="device">Device ID: ${deviceId} | Backend: ${BACKEND_URL}</div>
@@ -187,7 +187,7 @@
                 
                 case 'video':
           display.innerHTML = `<video src="${content.url}" autoplay muted></video>`;
-          display.querySelector('video').onended = () => advancePlaylist();
+          display.querySelector('video').onended = () => playContent(currentIndex + 1);
           break;
                 
                 case 'youtube':
